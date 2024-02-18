@@ -1,65 +1,61 @@
-﻿using System.CodeDom.Compiler;
+using System.CodeDom.Compiler;
 
-namespace ktsu.io.CodeBlocker
+namespace ktsu.io.CodeBlocker;
+
+public class CodeBlocker : IndentedTextWriter
 {
-	public class CodeBlocker : IndentedTextWriter
-	{
-		public static CodeBlocker Create() => new(new());
+	public static CodeBlocker Create() => new(new());
 
-		private StringWriter StringWriter { get; set; }
-		internal CodeBlocker(StringWriter stringWriter) : base(stringWriter, "\t")
+	private StringWriter StringWriter { get; set; }
+	internal CodeBlocker(StringWriter stringWriter) : base(stringWriter, "\t") => StringWriter = stringWriter;
+
+	public override string ToString() => InnerWriter.ToString() ?? string.Empty;
+
+	public new void NewLine() => WriteLineNoTabs(string.Empty);
+
+	protected override void Dispose(bool disposing)
+	{
+		if (disposing && StringWriter != null)
 		{
-			StringWriter = stringWriter;
+			StringWriter.Dispose();
 		}
 
-		public override string ToString() => InnerWriter.ToString() ?? string.Empty;
+		base.Dispose(disposing);
+	}
+}
 
-		public new void NewLine() => WriteLineNoTabs(string.Empty);
+public class Scope : IDisposable
+{
+	private bool disposedValue;
 
-		protected override void Dispose(bool disposing)
+	private CodeBlocker? CodeBlocker { get; set; }
+
+	public Scope(CodeBlocker codeBlocker)
+	{
+		CodeBlocker = codeBlocker;
+		CodeBlocker.WriteLine("{");
+		CodeBlocker.Indent++;
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!disposedValue)
 		{
-			if (disposing && StringWriter != null)
+			if (disposing && CodeBlocker != null)
 			{
-				StringWriter.Dispose();
+				CodeBlocker.Indent--;
+				CodeBlocker.WriteLine("};");
 			}
 
-			base.Dispose(disposing);
+			CodeBlocker = null;
+			disposedValue = true;
 		}
 	}
 
-	public class Scope : IDisposable
+	public void Dispose()
 	{
-		private bool disposedValue;
-
-		private CodeBlocker? CodeBlocker { get; set; }
-
-		public Scope(CodeBlocker codeBlocker)
-		{
-			CodeBlocker = codeBlocker;
-			CodeBlocker.WriteLine("{");
-			CodeBlocker.Indent++;
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-			if (!disposedValue)
-			{
-				if (disposing && CodeBlocker != null)
-				{
-					CodeBlocker.Indent--;
-					CodeBlocker.WriteLine("};");
-				}
-
-				CodeBlocker = null;
-				disposedValue = true;
-			}
-		}
-
-		public void Dispose()
-		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
-			GC.SuppressFinalize(this);
-		}
+		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
 	}
 }
