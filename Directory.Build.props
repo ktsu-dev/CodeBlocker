@@ -1,7 +1,5 @@
 <Project>
 
-  <Import Project=".project.props" />
-
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -10,23 +8,18 @@
     <AssemblyName>$(RootNamespace)</AssemblyName>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <WarningLevel>9999</WarningLevel>
-    <NoWarn>CA1724;CA1034;CA1000;IDE1006</NoWarn>
+    <NoWarn>CA1724;CA1034;CA1000</NoWarn>
     <IncludeContentInPack>True</IncludeContentInPack>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\.project.props" />
+    <None Include="Directory.Build.props" />
     <None Include="..\$(PackageLicenseFile)" Pack="True" PackagePath="" Visible="False" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>$(RootNamespace).Test</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="$(RootNamespace).Test" />
   </ItemGroup>
 
 </Project>

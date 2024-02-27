@@ -1,6 +1,5 @@
-using System.CodeDom.Compiler;
-
 namespace ktsu.io.CodeBlocker;
+using System.CodeDom.Compiler;
 
 /// <summary>
 /// Class to create indented code blocks wrapped in braces.
