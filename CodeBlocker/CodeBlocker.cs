@@ -1,4 +1,4 @@
-namespace ktsu.io.CodeBlocker;
+namespace ktsu.CodeBlocker;
 using System.CodeDom.Compiler;
 
 /// <summary>

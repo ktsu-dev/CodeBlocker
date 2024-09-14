@@ -5,7 +5,7 @@ An IndentedTextWriter that makes generating code blocks easier.
 ```csharp
 namespace CodeBlockerExample;
 
-using ktsu.io.CodeBlocker;
+using ktsu.CodeBlocker;
 
 internal class Example
 {
