@@ -1,9 +1,3 @@
-## v1.0.30 (patch)
-
-Changes since v1.0.29-pre.1:
-
-- Add automation scripts for metadata management and versioning ([@matt-edmondson](https://github.com/matt-edmondson))
-
 ## v1.0.29-pre.1 (patch)
 
 Changes since v1.0.28:
@@ -14,6 +8,13 @@ Changes since v1.0.28:
 
 Changes since v1.0.23:
 
+- Replace LICENSE file with LICENSE.md and update copyright information ([@matt-edmondson](https://github.com/matt-edmondson))
+
+## v1.0.10-pre.1 (patch)
+
+Changes since v1.0.9:
+
+- Renamed metadata files ([@matt-edmondson](https://github.com/matt-edmondson))
 - Replace LICENSE file with LICENSE.md and update copyright information ([@matt-edmondson](https://github.com/matt-edmondson))
 
 ## v1.0.1 (patch)
