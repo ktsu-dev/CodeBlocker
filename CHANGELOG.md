@@ -1,3 +1,9 @@
+## v1.0.31 (patch)
+
+Changes since v1.0.30:
+
+- Update .editorconfig for improved code style and naming ([@matt-edmondson](https://github.com/matt-edmondson))
+
 ## v1.0.24 (patch)
 
 Changes since v1.0.23:
