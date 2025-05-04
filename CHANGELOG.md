@@ -1,3 +1,9 @@
+## v1.1.1 (patch)
+
+Changes since v1.1.0:
+
+- Enhance documentation and project metadata. Updated DESCRIPTION.md to clarify the purpose of CodeBlocker and expanded README.md with detailed introduction, features, installation instructions, usage examples, and API reference. Changed project SDK in CodeBlocker.csproj to ktsu.Sdk.Lib/1.8.0. ([@matt-edmondson](https://github.com/matt-edmondson))
+
 ## v1.1.0 (minor)
 
 Changes since v1.0.0:
