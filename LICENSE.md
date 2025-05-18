@@ -1,6 +1,6 @@
 MIT License
 
-https://github.com/ktsu-dev/ktsu-dev/CodeBlocker
+https://github.com/ktsu-dev/CodeBlocker
 
 Copyright (c) 2023-2025 ktsu-dev
 
