@@ -2,10 +2,9 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ktsu.CodeBlocker;
-
 namespace CodeBlocker.Tests;
+using ktsu.CodeBlocker;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 public sealed class CodeBlockerTests
@@ -14,21 +13,21 @@ public sealed class CodeBlockerTests
 	public void CreateShouldReturnValidInstance()
 	{
 		// Act
-		var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Assert
 		Assert.IsNotNull(codeBlocker);
-		Assert.IsInstanceOfType<ktsu.CodeBlocker.CodeBlocker>(codeBlocker);
+		Assert.IsInstanceOfType<CodeBlocker>(codeBlocker);
 	}
 
 	[TestMethod]
 	public void ToStringEmptyCodeBlockerShouldReturnEmptyString()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 
 		// Assert
 		Assert.AreEqual(string.Empty, result);
@@ -38,11 +37,11 @@ public sealed class CodeBlockerTests
 	public void WriteLineShouldAddLineWithIndentation()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 		codeBlocker.WriteLine("test line");
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 
 		// Assert
 		Assert.AreEqual("test line\r\n", result);
@@ -52,11 +51,11 @@ public sealed class CodeBlockerTests
 	public void NewLineShouldAddEmptyLine()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 		codeBlocker.NewLine();
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 
 		// Assert
 		Assert.AreEqual("\r\n", result);
@@ -66,12 +65,12 @@ public sealed class CodeBlockerTests
 	public void WriteLineWithIndentationShouldRespectIndentLevel()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 		codeBlocker.Indent++;
 		codeBlocker.WriteLine("indented line");
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 
 		// Assert
 		Assert.AreEqual("\tindented line\r\n", result);
@@ -81,7 +80,7 @@ public sealed class CodeBlockerTests
 	public void MultipleLinesShouldMaintainProperIndentation()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 		codeBlocker.WriteLine("line 1");
@@ -89,10 +88,10 @@ public sealed class CodeBlockerTests
 		codeBlocker.WriteLine("line 2 indented");
 		codeBlocker.Indent--;
 		codeBlocker.WriteLine("line 3");
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 
 		// Assert
-		var expected = "line 1\r\n\tline 2 indented\r\nline 3\r\n";
+		string expected = "line 1\r\n\tline 2 indented\r\nline 3\r\n";
 		Assert.AreEqual(expected, result);
 	}
 
@@ -100,7 +99,7 @@ public sealed class CodeBlockerTests
 	public void DisposeShouldNotThrowException()
 	{
 		// Arrange
-		var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 		codeBlocker.Dispose(); // Should not throw
@@ -110,7 +109,7 @@ public sealed class CodeBlockerTests
 	public void DisposeMultipleCallsShouldNotThrow()
 	{
 		// Arrange
-		var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 		codeBlocker.Dispose();

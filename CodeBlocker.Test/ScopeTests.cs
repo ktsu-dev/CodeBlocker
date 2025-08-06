@@ -2,10 +2,9 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ktsu.CodeBlocker;
-
 namespace CodeBlocker.Tests;
+using ktsu.CodeBlocker;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 public sealed class ScopeTests
@@ -14,15 +13,15 @@ public sealed class ScopeTests
 	public void ConstructorShouldOpenBraceAndIncreaseIndentation()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
-		var initialIndent = codeBlocker.Indent;
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		int initialIndent = codeBlocker.Indent;
 
 		// Act
-		using var scope = new Scope(codeBlocker);
+		using Scope scope = new(codeBlocker);
 
 		// Assert
 		Assert.AreEqual(initialIndent + 1, codeBlocker.Indent);
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal));
 	}
 
@@ -30,16 +29,16 @@ public sealed class ScopeTests
 	public void DisposeShouldCloseBraceAndDecreaseIndentation()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
-		var initialIndent = codeBlocker.Indent;
-		var scope = new Scope(codeBlocker);
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		int initialIndent = codeBlocker.Indent;
+		Scope scope = new(codeBlocker);
 
 		// Act
 		scope.Dispose();
 
 		// Assert
 		Assert.AreEqual(initialIndent, codeBlocker.Indent);
-		var result = codeBlocker.ToString();
+		string result = codeBlocker.ToString();
 		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal));
 	}
 
@@ -47,17 +46,17 @@ public sealed class ScopeTests
 	public void UsingStatementShouldProperlyOpenAndCloseScope()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		using (var scope = new Scope(codeBlocker))
+		using (Scope scope = new(codeBlocker))
 		{
 			codeBlocker.WriteLine("content inside scope");
 		}
 
 		// Assert
-		var result = codeBlocker.ToString();
-		var expected = "{\r\n\tcontent inside scope\r\n};\r\n";
+		string result = codeBlocker.ToString();
+		string expected = "{\r\n\tcontent inside scope\r\n};\r\n";
 		Assert.AreEqual(expected, result);
 	}
 
@@ -65,13 +64,13 @@ public sealed class ScopeTests
 	public void NestedScopesShouldMaintainProperIndentation()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		using (var scope1 = new Scope(codeBlocker))
+		using (Scope scope1 = new(codeBlocker))
 		{
 			codeBlocker.WriteLine("level 1");
-			using (var scope2 = new Scope(codeBlocker))
+			using (Scope scope2 = new(codeBlocker))
 			{
 				codeBlocker.WriteLine("level 2");
 			}
@@ -79,8 +78,8 @@ public sealed class ScopeTests
 		}
 
 		// Assert
-		var result = codeBlocker.ToString();
-		var expected = "{\r\n\tlevel 1\r\n\t{\r\n\t\tlevel 2\r\n\t};\r\n\tback to level 1\r\n};\r\n";
+		string result = codeBlocker.ToString();
+		string expected = "{\r\n\tlevel 1\r\n\t{\r\n\t\tlevel 2\r\n\t};\r\n\tback to level 1\r\n};\r\n";
 		Assert.AreEqual(expected, result);
 	}
 
@@ -88,8 +87,8 @@ public sealed class ScopeTests
 	public void MultipleDisposeShouldNotThrowException()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
-		var scope = new Scope(codeBlocker);
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		Scope scope = new(codeBlocker);
 
 		// Act & Assert
 		scope.Dispose();
@@ -100,17 +99,17 @@ public sealed class ScopeTests
 	public void ScopeWithoutContentShouldStillFormatCorrectly()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		using (var scope = new Scope(codeBlocker))
+		using (Scope scope = new(codeBlocker))
 		{
 			// No content added
 		}
 
 		// Assert
-		var result = codeBlocker.ToString();
-		var expected = "{\r\n};\r\n";
+		string result = codeBlocker.ToString();
+		string expected = "{\r\n};\r\n";
 		Assert.AreEqual(expected, result);
 	}
 
@@ -118,22 +117,22 @@ public sealed class ScopeTests
 	public void MultipleSequentialScopesShouldFormatCorrectly()
 	{
 		// Arrange
-		using var codeBlocker = ktsu.CodeBlocker.CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		using (var scope1 = new Scope(codeBlocker))
+		using (Scope scope1 = new(codeBlocker))
 		{
 			codeBlocker.WriteLine("scope 1 content");
 		}
 
-		using (var scope2 = new Scope(codeBlocker))
+		using (Scope scope2 = new(codeBlocker))
 		{
 			codeBlocker.WriteLine("scope 2 content");
 		}
 
 		// Assert
-		var result = codeBlocker.ToString();
-		var expected = "{\r\n\tscope 1 content\r\n};\r\n{\r\n\tscope 2 content\r\n};\r\n";
+		string result = codeBlocker.ToString();
+		string expected = "{\r\n\tscope 1 content\r\n};\r\n{\r\n\tscope 2 content\r\n};\r\n";
 		Assert.AreEqual(expected, result);
 	}
 }

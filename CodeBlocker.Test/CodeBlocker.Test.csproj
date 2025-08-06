@@ -1,0 +1,5 @@
+<Project Sdk="ktsu.Sdk.Test">
+  <PropertyGroup>
+    <TargetFrameworks>net9.0;</TargetFrameworks>
+  </PropertyGroup>
+</Project>
