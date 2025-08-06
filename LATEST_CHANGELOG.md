@@ -1,5 +1,5 @@
-## v1.1.4 (patch)
+## v1.1.5 (patch)
 
-Changes since v1.1.3:
+Changes since v1.1.4:
 
-- Integrate CodeBlocker.Test project with unit and integration tests; update dependencies and solution configuration for testing support ([@matt-edmondson](https://github.com/matt-edmondson))
+- Add ktsu.ScopedAction dependency; enhance CodeBlocker with custom indentation support and Scope management ([@matt-edmondson](https://github.com/matt-edmondson))
