@@ -1,5 +1,5 @@
-## v1.1.3 (patch)
+## v1.1.4 (patch)
 
-Changes since v1.1.2:
+Changes since v1.1.3:
 
-- Add unit and integration tests for CodeBlocker functionality; include test dependencies in project configuration ([@matt-edmondson](https://github.com/matt-edmondson))
+- Integrate CodeBlocker.Test project with unit and integration tests; update dependencies and solution configuration for testing support ([@matt-edmondson](https://github.com/matt-edmondson))
