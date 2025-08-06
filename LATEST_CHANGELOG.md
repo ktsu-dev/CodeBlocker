@@ -1,5 +1,5 @@
-## v1.1.5 (patch)
+## v1.1.6 (patch)
 
-Changes since v1.1.4:
+Changes since v1.1.5:
 
-- Add ktsu.ScopedAction dependency; enhance CodeBlocker with custom indentation support and Scope management ([@matt-edmondson](https://github.com/matt-edmondson))
+- Enhance CodeBlocker functionality with new methods and improved documentation ([@matt-edmondson](https://github.com/matt-edmondson))
