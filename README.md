@@ -16,10 +16,12 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 
 - **Automatic Indentation**: Properly manages indentation levels as you create nested code blocks
 - **Configurable Indentation**: Support for custom indent strings (tabs, spaces, or any custom pattern)
-- **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling
+- **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
 - **Standard Output Support**: Works with StringWriter for flexible output handling
-- **Lightweight**: Minimal dependencies, built on top of `ktsu.ScopedAction`
+- **Cross-Platform**: Supports .NET 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
+- **Lightweight**: Minimal dependencies, built on top of `ktsu.ScopedAction` for robust scope management
+- **Well-Tested**: Includes comprehensive unit and integration tests
 
 ## Installation
 
@@ -38,7 +40,7 @@ dotnet add package ktsu.CodeBlocker
 ### Package Reference
 
 ```xml
-<PackageReference Include="ktsu.CodeBlocker" Version="x.y.z" />
+<PackageReference Include="ktsu.CodeBlocker" Version="1.1.5" />
 ```
 
 ## Usage Examples
@@ -54,11 +56,15 @@ internal class Example
 {
 	public static void GenerateCode()
 	{
+		// Create a new CodeBlocker instance with default tab indentation
 		using var codeBlocker = CodeBlocker.Create();
 
+		// Write using statements and namespace
 		codeBlocker.WriteLine("using System;");
-		codeBlocker.NewLine();
+		codeBlocker.NewLine(); // Add empty line without indentation
 		codeBlocker.WriteLine("namespace Example");
+		
+		// Use Scope for automatic brace and indentation management
 		using (new Scope(codeBlocker))
 		{
 			codeBlocker.WriteLine("public class Example");
@@ -68,10 +74,11 @@ internal class Example
 				using (new Scope(codeBlocker))
 				{
 					codeBlocker.WriteLine("Console.WriteLine(\"Hello, World!\");");
-				}
+				} // Scope automatically writes closing brace and manages indentation
 			}
 		}
 
+		// Output the generated code
 		Console.WriteLine(codeBlocker.ToString());
 	}
 }
@@ -93,6 +100,8 @@ namespace Example
 	};
 };
 ```
+
+> **Note**: The `Scope` class automatically adds semicolons after closing braces (`};`) by design, which can be useful for code generation scenarios where you need to distinguish generated blocks.
 
 ### Custom Indentation
 
@@ -213,7 +222,9 @@ The main class for building indented code blocks.
 | Name | Return Type | Description |
 |------|-------------|-------------|
 | `WriteLine(string line)` | `void` | Writes a line of text with appropriate indentation |
-| `NewLine()` | `void` | Writes an empty line |
+| `WriteLine()` | `void` | Writes an empty line with current indentation |
+| `Write(string text)` | `void` | Writes text without adding a new line |
+| `NewLine()` | `void` | Writes an empty line without indentation |
 | `Indent()` | `void` | Increases the indent level |
 | `Outdent()` | `void` | Decreases the indent level |
 | `ToString()` | `string` | Returns the generated code as a string |
@@ -223,7 +234,7 @@ The main class for building indented code blocks.
 
 ### `Scope` Class
 
-Helper class for managing indentation scopes with automatic brace handling. Inherits from `ScopedAction`.
+Helper class for managing indentation scopes with automatic brace handling. Built on top of `ktsu.ScopedAction` for guaranteed resource cleanup and exception safety.
 
 #### Constructor
 
@@ -241,6 +252,8 @@ Helper class for managing indentation scopes with automatic brace handling. Inhe
 
 - **On Creation**: Writes `{` and increases indentation level
 - **On Disposal**: Decreases indentation level and writes `};`
+- **Exception Safety**: Guaranteed cleanup even if exceptions occur within the scope
+- **Resource Management**: Built on `ktsu.ScopedAction` for reliable resource handling
 
 ## Contributing
 

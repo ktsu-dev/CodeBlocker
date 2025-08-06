@@ -186,4 +186,247 @@ public sealed class IntegrationTests
 		Assert.AreEqual(expected2, result2);
 		Assert.AreNotEqual(result1, result2);
 	}
+
+	[TestMethod]
+	public void ComplexTemplateGenerationWithMultipleIndentTypesShouldWork()
+	{
+		// Arrange
+		using CodeBlocker htmlBlocker = CodeBlocker.Create("  "); // 2 spaces for HTML
+		using CodeBlocker jsBlocker = CodeBlocker.Create("\t"); // Tabs for JS
+
+		// Act - Generate HTML structure
+		htmlBlocker.WriteLine("<!DOCTYPE html>");
+		htmlBlocker.WriteLine("<html>");
+		using (Scope htmlScope = new(htmlBlocker))
+		{
+			htmlBlocker.WriteLine("<head>");
+			using (Scope headScope = new(htmlBlocker))
+			{
+				htmlBlocker.WriteLine("<title>Test Page</title>");
+			}
+			htmlBlocker.WriteLine("<body>");
+			using (Scope bodyScope = new(htmlBlocker))
+			{
+				htmlBlocker.WriteLine("<div id=\"content\">");
+				using Scope divScope = new(htmlBlocker);
+				htmlBlocker.WriteLine("<p>Content here</p>");
+			}
+		}
+
+		// Generate JavaScript structure
+		jsBlocker.WriteLine("function setupPage() ");
+		using (Scope functionScope = new(jsBlocker))
+		{
+			jsBlocker.WriteLine("const content = document.getElementById('content');");
+			jsBlocker.WriteLine("if (content) ");
+			using (Scope ifScope = new(jsBlocker))
+			{
+				jsBlocker.WriteLine("content.addEventListener('click', handleClick);");
+			}
+		}
+
+		// Assert
+		string htmlResult = htmlBlocker.ToString();
+		string jsResult = jsBlocker.ToString();
+
+		// Verify HTML uses 2-space indentation
+		Assert.IsTrue(htmlResult.Contains("  <head>\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(htmlResult.Contains("    <title>Test Page</title>\r\n", StringComparison.Ordinal));
+
+		// Verify JS uses tab indentation
+		Assert.IsTrue(jsResult.Contains("\tconst content = document.getElementById('content');\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(jsResult.Contains("\t\tcontent.addEventListener('click', handleClick);\r\n", StringComparison.Ordinal));
+	}
+
+	[TestMethod]
+	public void MixedWriteOperationsWithComplexIndentationShouldFormatCorrectly()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act - Mix Write and WriteLine operations
+		codeBlocker.Write("public class ");
+		codeBlocker.Write("MyClass");
+		codeBlocker.WriteLine(" : BaseClass");
+		using (Scope classScope = new(codeBlocker))
+		{
+			codeBlocker.Write("private readonly ");
+			codeBlocker.WriteLine("string _field;");
+			codeBlocker.NewLine();
+
+			codeBlocker.Write("public ");
+			codeBlocker.Write("MyClass");
+			codeBlocker.WriteLine("(string field)");
+			using (Scope constructorScope = new(codeBlocker))
+			{
+				codeBlocker.Write("_field = ");
+				codeBlocker.Write("field ?? ");
+				codeBlocker.WriteLine("throw new ArgumentNullException(nameof(field));");
+			}
+		}
+
+		// Assert
+		string result = codeBlocker.ToString();
+		string expected =
+			"public class MyClass : BaseClass\r\n" +
+			"{\r\n" +
+			"\tprivate readonly string _field;\r\n" +
+			"\r\n" +
+			"\tpublic MyClass(string field)\r\n" +
+			"\t{\r\n" +
+			"\t\t_field = field ?? throw new ArgumentNullException(nameof(field));\r\n" +
+			"\t};\r\n" +
+			"};\r\n";
+
+		Assert.AreEqual(expected, result);
+	}
+
+	[TestMethod]
+	public void LargeScaleCodeGenerationShouldPerformReasonably()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		const int classCount = 100;
+		const int methodsPerClass = 10;
+
+		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+		// Act - Generate large amount of code
+		codeBlocker.WriteLine("namespace LargeTest");
+		using (Scope namespaceScope = new(codeBlocker))
+		{
+			for (int classIndex = 0; classIndex < classCount; classIndex++)
+			{
+				codeBlocker.WriteLine($"public class Class{classIndex}");
+				using (Scope classScope = new(codeBlocker))
+				{
+					for (int methodIndex = 0; methodIndex < methodsPerClass; methodIndex++)
+					{
+						codeBlocker.WriteLine($"public void Method{methodIndex}()");
+						using Scope methodScope = new(codeBlocker);
+						codeBlocker.WriteLine($"// Method {methodIndex} implementation");
+						codeBlocker.WriteLine($"var result = {methodIndex} * 2;");
+						codeBlocker.WriteLine("return result;");
+					}
+				}
+
+				if (classIndex < classCount - 1)
+				{
+					codeBlocker.NewLine();
+				}
+			}
+		}
+
+		stopwatch.Stop();
+
+		// Assert
+		string result = codeBlocker.ToString();
+
+		// Verify structure exists
+		Assert.IsTrue(result.Contains("namespace LargeTest\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("public class Class0\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains($"public class Class{classCount - 1}\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("public void Method0()\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains($"public void Method{methodsPerClass - 1}()\r\n", StringComparison.Ordinal));
+
+		// Verify performance (should complete in reasonable time)
+		Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000, $"Code generation took too long: {stopwatch.ElapsedMilliseconds}ms");
+
+		// Verify brace matching
+		int openBraces = result.Count(c => c == '{');
+		int closeBraces = result.Count(c => c == '}');
+		Assert.AreEqual(openBraces, closeBraces);
+
+		// Expected braces: 1 namespace + classCount classes + (classCount * methodsPerClass) methods
+		int expectedBraces = 1 + classCount + (classCount * methodsPerClass);
+		Assert.AreEqual(expectedBraces, openBraces);
+	}
+
+	[TestMethod]
+	public void SharedStringWriterBetweenCodeBlockersShouldWork()
+	{
+		// Arrange
+		using StringWriter sharedWriter = new();
+
+		// Act
+		using (CodeBlocker codeBlocker1 = new(sharedWriter))
+		{
+			codeBlocker1.WriteLine("// First CodeBlocker");
+			using Scope scope1 = new(codeBlocker1);
+			codeBlocker1.WriteLine("content from first");
+		}
+
+		using (CodeBlocker codeBlocker2 = new(sharedWriter, "  "))
+		{
+			codeBlocker2.WriteLine("// Second CodeBlocker with different indent");
+			using Scope scope2 = new(codeBlocker2);
+			codeBlocker2.WriteLine("content from second");
+		}
+
+		// Assert
+		string result = sharedWriter.ToString();
+
+		// Verify both CodeBlockers wrote to the same StringWriter
+		Assert.IsTrue(result.Contains("// First CodeBlocker\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("\tcontent from first\r\n", StringComparison.Ordinal)); // Tab indent from first
+		Assert.IsTrue(result.Contains("// Second CodeBlocker with different indent\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("  content from second\r\n", StringComparison.Ordinal)); // 2-space indent from second
+	}
+
+	[TestMethod]
+	public void ErrorRecoveryAfterExceptionShouldNotAffectFutureOperations()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act & Assert - Test error recovery
+#pragma warning disable CA1031 // Do not catch general exception types - This test specifically needs to catch any potential exception
+		try
+		{
+			// This might throw depending on implementation
+			codeBlocker.CurrentIndent = -10;
+		}
+		catch (Exception)
+		{
+			// Ignore any exceptions for this resilience test
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+
+		// Should still be able to continue normally
+		codeBlocker.CurrentIndent = 1;
+		codeBlocker.WriteLine("recovered content");
+
+		using (Scope scope = new(codeBlocker))
+		{
+			codeBlocker.WriteLine("scope content");
+		}
+
+		string result = codeBlocker.ToString();
+		Assert.IsTrue(result.Contains("recovered content\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("scope content\r\n", StringComparison.Ordinal));
+	}
+
+	[TestMethod]
+	public void UnicodeAndSpecialCharactersShouldBeHandledCorrectly()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create("→→"); // Unicode arrows as indent
+
+		// Act
+		codeBlocker.WriteLine("// Unicode test: αβγδε 中文 🚀");
+		using (Scope scope = new(codeBlocker))
+		{
+			codeBlocker.WriteLine("string text = \"Hello 世界!\";");
+			codeBlocker.WriteLine("char symbol = '€';");
+			codeBlocker.WriteLine("// Special chars: \t\r\n\\\"");
+		}
+
+		// Assert
+		string result = codeBlocker.ToString();
+
+		Assert.IsTrue(result.Contains("// Unicode test: αβγδε 中文 🚀\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("→→string text = \"Hello 世界!\";\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("→→char symbol = '€';\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("→→// Special chars: \t\r\n\\\"", StringComparison.Ordinal));
+	}
 }

@@ -181,4 +181,252 @@ public sealed class CodeBlockerTests
 		Assert.AreEqual(expected, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
+
+	[TestMethod]
+	public void WriteLineWithoutParametersShouldAddEmptyLineWithIndentation()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.Indent();
+		codeBlocker.WriteLine(); // Empty WriteLine
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual("\t\r\n", result);
+	}
+
+	[TestMethod]
+	public void WriteMethodShouldAddTextWithoutNewline()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.Write("part1");
+		codeBlocker.Write("part2");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual("part1part2", result);
+	}
+
+	[TestMethod]
+	public void WriteMethodWithIndentationShouldRespectIndentLevel()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.Indent();
+		codeBlocker.Write("indented text");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual("\tindented text", result);
+	}
+
+	[TestMethod]
+	public void CurrentIndentSetterShouldUpdateIndentationLevel()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.CurrentIndent = 3;
+		codeBlocker.WriteLine("test line");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual(3, codeBlocker.CurrentIndent);
+		Assert.AreEqual("\t\t\ttest line\r\n", result);
+	}
+
+	[TestMethod]
+	public void CurrentIndentSetterWithZeroShouldRemoveIndentation()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		codeBlocker.Indent();
+		codeBlocker.Indent();
+
+		// Act
+		codeBlocker.CurrentIndent = 0;
+		codeBlocker.WriteLine("no indent");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual(0, codeBlocker.CurrentIndent);
+		Assert.AreEqual("no indent\r\n", result);
+	}
+
+	[TestMethod]
+	public void ConstructorWithNullStringWriterShouldThrowArgumentNullException()
+	{
+		// Act & Assert
+		Assert.ThrowsExactly<ArgumentNullException>(() => new CodeBlocker(null!));
+	}
+
+	[TestMethod]
+	public void ConstructorWithNullStringWriterAndIndentStringShouldThrowArgumentNullException()
+	{
+		// Act & Assert
+		Assert.ThrowsExactly<ArgumentNullException>(() => new CodeBlocker(null!, "  "));
+	}
+
+	[TestMethod]
+	public void CreateWithNullIndentStringShouldWork()
+	{
+		// Arrange & Act
+		using CodeBlocker codeBlocker = CodeBlocker.Create(null!);
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("test");
+		string result = codeBlocker.ToString();
+
+		// Assert - Should work with null indent string (treated as default)
+		Assert.IsNotNull(result);
+		Assert.IsTrue(result.Contains("test\r\n", StringComparison.Ordinal));
+	}
+
+	[TestMethod]
+	public void WriteLineWithNullParameterShouldWork()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.WriteLine(null!);
+		string result = codeBlocker.ToString();
+
+		// Assert - IndentedTextWriter should handle null gracefully
+		Assert.IsNotNull(result);
+	}
+
+	[TestMethod]
+	public void WriteWithNullParameterShouldWork()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.Write(null!);
+		string result = codeBlocker.ToString();
+
+		// Assert - IndentedTextWriter should handle null gracefully
+		Assert.IsNotNull(result);
+	}
+
+	[TestMethod]
+	public void OutdentBelowZeroShouldNotThrow()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act & Assert - Should not throw, but may not go below 0
+		codeBlocker.Outdent();
+		Assert.IsTrue(codeBlocker.CurrentIndent >= 0); // IndentedTextWriter may clamp to 0
+
+		codeBlocker.WriteLine("test");
+		string result = codeBlocker.ToString();
+		Assert.IsNotNull(result);
+	}
+
+	[TestMethod]
+	public void DisposeWithStringWriterManagementShouldNotThrowWhenCalledMultipleTimes()
+	{
+		// Arrange
+		CodeBlocker codeBlocker = CodeBlocker.Create(); // This should manage StringWriter disposal
+
+		// Act & Assert - Should not throw
+		codeBlocker.Dispose();
+		codeBlocker.Dispose();
+		codeBlocker.Dispose();
+	}
+
+	[TestMethod]
+	public void MixedWriteAndWriteLineShouldFormatCorrectly()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Act
+		codeBlocker.Write("start ");
+		codeBlocker.Write("middle ");
+		codeBlocker.WriteLine("end");
+		codeBlocker.WriteLine("new line");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		string expected = "start middle end\r\nnew line\r\n";
+		Assert.AreEqual(expected, result);
+	}
+
+	[TestMethod]
+	public void DeepIndentationStressTest()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		const int maxDepth = 100;
+
+		// Act
+		for (int i = 0; i < maxDepth; i++)
+		{
+			codeBlocker.Indent();
+		}
+
+		codeBlocker.WriteLine("deeply nested");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual(maxDepth, codeBlocker.CurrentIndent);
+		Assert.IsTrue(result.StartsWith(new string('\t', maxDepth) + "deeply nested\r\n", StringComparison.Ordinal));
+	}
+
+	[TestMethod]
+	public void LargeStringContentShouldBeHandledCorrectly()
+	{
+		// Arrange
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		string largeString = new('x', 10000);
+
+		// Act
+		codeBlocker.WriteLine(largeString);
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.IsTrue(result.Contains(largeString, StringComparison.Ordinal));
+		Assert.IsTrue(result.EndsWith("\r\n", StringComparison.Ordinal));
+	}
+
+	[TestMethod]
+	public void EmptyIndentStringShouldWork()
+	{
+		// Arrange & Act
+		using CodeBlocker codeBlocker = CodeBlocker.Create(string.Empty);
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("test");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual(string.Empty, codeBlocker.IndentString);
+		Assert.AreEqual("test\r\n", result); // No indentation with empty string
+	}
+
+	[TestMethod]
+	public void VeryLongIndentStringShouldWork()
+	{
+		// Arrange
+		const string longIndent = "====================================";
+		using CodeBlocker codeBlocker = CodeBlocker.Create(longIndent);
+
+		// Act
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("test");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual(longIndent, codeBlocker.IndentString);
+		Assert.AreEqual(longIndent + "test\r\n", result);
+	}
 }

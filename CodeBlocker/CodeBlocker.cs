@@ -83,6 +83,17 @@ public class CodeBlocker(StringWriter stringWriter) : IDisposable
 	public void WriteLine(string line) => IndentedTextWriter.WriteLine(line);
 
 	/// <summary>
+	/// Write a line of code with indentation.
+	/// </summary>
+	public void WriteLine() => IndentedTextWriter.WriteLine();
+
+	/// <summary>
+	/// Write a line of code with indentation.
+	/// </summary>
+	/// <param name="text">The text to write.</param>
+	public void Write(string text) => IndentedTextWriter.Write(text);
+
+	/// <summary>
 	/// Increase the indentation level.
 	/// </summary>
 	public void Indent() => IndentedTextWriter.Indent++;
