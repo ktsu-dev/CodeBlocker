@@ -1,7 +1,5 @@
-## v1.1.2 (patch)
+## v1.1.3 (patch)
 
-Changes since v1.1.1:
+Changes since v1.1.2:
 
-- Enhance .NET workflow with manual trigger support, JDK setup, and SonarQube integration; update PSBuild script to allow optional NuGet API key and handle changelog length limits. ([@matt-edmondson](https://github.com/matt-edmondson))
-- Update configuration files and scripts for improved build and test processes ([@matt-edmondson](https://github.com/matt-edmondson))
-- Support net9.0;net8.0;net7.0;net6.0;net5.0;netstandard2.0;netstandard2.1 ([@matt-edmondson](https://github.com/matt-edmondson))
+- Add unit and integration tests for CodeBlocker functionality; include test dependencies in project configuration ([@matt-edmondson](https://github.com/matt-edmondson))

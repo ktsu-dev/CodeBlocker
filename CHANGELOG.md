@@ -1,3 +1,8 @@
+## v1.1.3 (patch)
+
+Changes since v1.1.2:
+
+- Add unit and integration tests for CodeBlocker functionality; include test dependencies in project configuration ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.1.2 (patch)
 
 Changes since v1.1.1:
@@ -70,9 +75,7 @@ Changes since v1.1.2-pre.2:
 Changes since v1.1.2-pre.1:
 ## v1.1.2-pre.1 (prerelease)
 
-Changes since v1.1.1:
-
-- Sync scripts\PSBuild.psm1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
+Incremental prerelease update.
 ## v1.1.1 (patch)
 
 Changes since v1.1.0:
