@@ -52,7 +52,7 @@ public class Scope : IDisposable
 {
 	private bool disposedValue;
 
-	private CodeBlocker? CodeBlocker { get; set; }
+	private CodeBlocker CodeBlocker { get; set; }
 
 	/// <summary>
 	/// Create a new instance of <see cref="Scope"/>.
@@ -79,7 +79,7 @@ public class Scope : IDisposable
 				CodeBlocker.WriteLine("};");
 			}
 
-			CodeBlocker = null;
+			CodeBlocker = null!;
 			disposedValue = true;
 		}
 	}
