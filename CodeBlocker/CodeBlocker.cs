@@ -8,89 +8,128 @@ using System.CodeDom.Compiler;
 /// <summary>
 /// Class to create indented code blocks wrapped in braces.
 /// </summary>
-public class CodeBlocker : IndentedTextWriter
+/// <remarks>
+/// Create a new instance of <see cref="CodeBlocker"/>.
+/// </remarks>
+/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
+public class CodeBlocker(StringWriter stringWriter) : IDisposable
 {
+	private bool disposedValue;
+	private bool shouldDisposeStringWriter;
+
+	private IndentedTextWriter IndentedTextWriter { get; set; } = new(stringWriter, "\t");
+
+	/// <summary>
+	/// Get the current indent string being used.
+	/// </summary>
+	public string IndentString { get; private set; } = "\t";
+
+	/// <summary>
+	/// Create a new instance of <see cref="CodeBlocker"/> with a custom indent string.
+	/// </summary>
+	/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
+	/// <param name="indentString">The string to use for indentation.</param>
+	public CodeBlocker(StringWriter stringWriter, string indentString) : this(stringWriter)
+	{
+		IndentString = indentString;
+		IndentedTextWriter.Dispose(); // Dispose the default one
+		IndentedTextWriter = new IndentedTextWriter(stringWriter, indentString);
+	}
+
 	/// <summary>
 	/// Create a new instance of <see cref="CodeBlocker"/>.
 	/// </summary>
 	/// <returns>A new instance of <see cref="CodeBlocker"/>.</returns>
-	public static CodeBlocker Create() => new(new());
+	public static CodeBlocker Create()
+	{
+#pragma warning disable CA2000 // Dispose objects before losing scope - StringWriter will be disposed by CodeBlocker when shouldDisposeStringWriter is true
+		return new(new())
+		{
+			shouldDisposeStringWriter = true
+		};
+#pragma warning restore CA2000 // Dispose objects before losing scope
+	}
 
-	private StringWriter StringWriter { get; set; }
-	internal CodeBlocker(StringWriter stringWriter) : base(stringWriter, "\t") => StringWriter = stringWriter;
+	/// <summary>
+	/// Create a new instance of <see cref="CodeBlocker"/> with a custom indent string.
+	/// </summary>
+	/// <param name="indentString">The string to use for indentation.</param>
+	/// <returns>A new instance of <see cref="CodeBlocker"/>.</returns>
+	public static CodeBlocker Create(string indentString)
+	{
+#pragma warning disable CA2000 // Dispose objects before losing scope - StringWriter will be disposed by CodeBlocker when shouldDisposeStringWriter is true
+		return new(new(), indentString)
+		{
+			shouldDisposeStringWriter = true
+		};
+#pragma warning restore CA2000 // Dispose objects before losing scope
+	}
 
 	/// <summary>
 	/// Get the string representation of the code.
 	/// </summary>
 	/// <returns>The string representation of the code.</returns>
-	public override string ToString() => InnerWriter.ToString() ?? string.Empty;
+	public override string ToString() => stringWriter.ToString();
 
 	/// <summary>
 	/// Write a line of code without indentation.
 	/// </summary>
-	public new void NewLine() => WriteLineNoTabs(string.Empty);
+	public void NewLine() => IndentedTextWriter.WriteLineNoTabs(string.Empty);
+
+	/// <summary>
+	/// Write a line of code with indentation.
+	/// </summary>
+	/// <param name="line">The line of code to write.</param>
+	public void WriteLine(string line) => IndentedTextWriter.WriteLine(line);
+
+	/// <summary>
+	/// Increase the indentation level.
+	/// </summary>
+	public void Indent() => IndentedTextWriter.Indent++;
+
+	/// <summary>
+	/// Decrease the indentation level.
+	/// </summary>
+	public void Outdent() => IndentedTextWriter.Indent--;
+
+	/// <summary>
+	/// Get/set the current indentation level.
+	/// </summary>
+	public int CurrentIndent
+	{
+		get => IndentedTextWriter.Indent;
+		set => IndentedTextWriter.Indent = value;
+	}
 
 	/// <summary>
 	/// Dispose of the <see cref="CodeBlocker"/>.
 	/// </summary>
-	/// <param name="disposing"></param>
-	protected override void Dispose(bool disposing)
-	{
-		if (disposing && StringWriter != null)
-		{
-			StringWriter.Dispose();
-		}
-
-		base.Dispose(disposing);
-	}
-}
-
-/// <summary>
-/// Class to create a scope in a code block.
-/// </summary>
-public class Scope : IDisposable
-{
-	private bool disposedValue;
-
-	private CodeBlocker CodeBlocker { get; set; }
-
-	/// <summary>
-	/// Create a new instance of <see cref="Scope"/>.
-	/// </summary>
-	/// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
-	public Scope(CodeBlocker codeBlocker)
-	{
-		CodeBlocker = codeBlocker;
-		CodeBlocker.WriteLine("{");
-		CodeBlocker.Indent++;
-	}
-
-	/// <summary>
-	/// Dispose of the <see cref="Scope"/>.
-	/// </summary>
-	/// <param name="disposing"></param>
+	/// <param name="disposing">True if disposing from Dispose() method, false if from finalizer.</param>
 	protected virtual void Dispose(bool disposing)
 	{
 		if (!disposedValue)
 		{
-			if (disposing && CodeBlocker != null)
+			if (disposing)
 			{
-				CodeBlocker.Indent--;
-				CodeBlocker.WriteLine("};");
+				if (shouldDisposeStringWriter)
+				{
+					stringWriter.Dispose();
+					shouldDisposeStringWriter = false;
+				}
+
+				IndentedTextWriter.Dispose();
 			}
 
-			CodeBlocker = null!;
 			disposedValue = true;
 		}
 	}
 
 	/// <summary>
-	/// Dispose of the <see cref="Scope"/>.
+	/// Dispose of the <see cref="CodeBlocker"/>.
 	/// </summary>
 	public void Dispose()
 	{
-		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-		Dispose(disposing: true);
+		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
 }

@@ -15,10 +15,11 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 ## Features
 
 - **Automatic Indentation**: Properly manages indentation levels as you create nested code blocks
-- **Scope Management**: Uses C# `using` statements for clean, readable scope creation
+- **Configurable Indentation**: Support for custom indent strings (tabs, spaces, or any custom pattern)
+- **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
-- **Standard Output Support**: Works with any TextWriter, including console output
-- **Lightweight**: Minimal dependencies, focused on doing one thing well
+- **Standard Output Support**: Works with StringWriter for flexible output handling
+- **Lightweight**: Minimal dependencies, built on top of `ktsu.ScopedAction`
 
 ## Installation
 
@@ -83,12 +84,58 @@ using System;
 
 namespace Example
 {
-    public class Example
+	public class Example
+	{
+		public static void Main()
+		{
+			Console.WriteLine("Hello, World!");
+		};
+	};
+};
+```
+
+### Custom Indentation
+
+CodeBlocker supports configurable indentation strings, allowing you to use spaces, tabs, or any custom pattern:
+
+```csharp
+// Using 2 spaces for indentation
+using var codeBlocker2Space = CodeBlocker.Create("  ");
+
+// Using 4 spaces for indentation
+using var codeBlocker4Space = CodeBlocker.Create("    ");
+
+// Using custom patterns (e.g., for markup generation)
+using var customCodeBlocker = CodeBlocker.Create("-->");
+
+// With existing StringWriter and custom indentation
+using var stringWriter = new StringWriter();
+using var codeBlocker = new CodeBlocker(stringWriter, "  ");
+
+codeBlocker.WriteLine("function example() {");
+codeBlocker.Indent();
+codeBlocker.WriteLine("console.log('Hello with 2 spaces!');");
+codeBlocker.Outdent();
+codeBlocker.WriteLine("}");
+
+Console.WriteLine(codeBlocker.ToString());
+// Output:
+// function example() {
+//   console.log('Hello with 2 spaces!');
+// }
+
+// Check current indent configuration
+Console.WriteLine($"Current indent: '{codeBlocker.IndentString}'"); // "  "
+
+// Custom indentation works seamlessly with Scope
+using var scopeCodeBlocker = CodeBlocker.Create("    "); // 4 spaces
+scopeCodeBlocker.WriteLine("public class Example");
+using (new Scope(scopeCodeBlocker))
+{
+    scopeCodeBlocker.WriteLine("public void Method()");
+    using (new Scope(scopeCodeBlocker))
     {
-        public static void Main()
-        {
-            Console.WriteLine("Hello, World!");
-        }
+        scopeCodeBlocker.WriteLine("// 4-space indented code");
     }
 }
 ```
@@ -96,12 +143,9 @@ namespace Example
 ### Advanced Usage
 
 ```csharp
-// Creating a CodeBlocker with custom settings
-using var codeBlocker = new CodeBlocker(
-    new StringWriter(),
-    indentString: "  ",  // Use 2 spaces for indentation
-    tabsAsSpaces: true   // Convert tabs to spaces
-);
+// Creating a CodeBlocker with a custom StringWriter
+using var stringWriter = new StringWriter();
+using var codeBlocker = new CodeBlocker(stringWriter);
 
 // Generate a more complex structure
 codeBlocker.WriteLine("public interface IExample");
@@ -139,6 +183,9 @@ using (new Scope(codeBlocker))
         codeBlocker.WriteLine("return parameter.ToString();");
     }
 }
+
+// Get the result
+string result = codeBlocker.ToString();
 ```
 
 ## API Reference
@@ -147,36 +194,53 @@ using (new Scope(codeBlocker))
 
 The main class for building indented code blocks.
 
+#### Constructors
+
+| Name | Description |
+|------|-------------|
+| `CodeBlocker(StringWriter stringWriter)` | Creates a new CodeBlocker with the specified StringWriter using tab indentation |
+| `CodeBlocker(StringWriter stringWriter, string indentString)` | Creates a new CodeBlocker with the specified StringWriter and custom indent string |
+
 #### Properties
 
 | Name | Type | Description |
 |------|------|-------------|
-| `IndentLevel` | `int` | Current indentation level |
-| `TabSize` | `int` | Size of a tab in spaces |
-| `IndentString` | `string` | String used for indentation (default: tab) |
-| `TextWriter` | `TextWriter` | Underlying TextWriter instance |
+| `CurrentIndent` | `int` | Gets or sets the current indentation level |
+| `IndentString` | `string` | Gets the current indent string being used (e.g., "\t", "  ", "    ") |
 
 #### Methods
 
 | Name | Return Type | Description |
 |------|-------------|-------------|
-| `WriteLine(string? line)` | `void` | Writes a line of text with appropriate indentation |
-| `Write(string? text)` | `void` | Writes text without a line terminator |
+| `WriteLine(string line)` | `void` | Writes a line of text with appropriate indentation |
 | `NewLine()` | `void` | Writes an empty line |
 | `Indent()` | `void` | Increases the indent level |
-| `Unindent()` | `void` | Decreases the indent level |
+| `Outdent()` | `void` | Decreases the indent level |
 | `ToString()` | `string` | Returns the generated code as a string |
-| `Create()` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance |
+| `Create()` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance with tab indentation |
+| `Create(string indentString)` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance with custom indentation |
+| `Dispose()` | `void` | Disposes of the CodeBlocker and underlying resources |
 
 ### `Scope` Class
 
-Helper class for managing indentation scopes.
+Helper class for managing indentation scopes with automatic brace handling. Inherits from `ScopedAction`.
+
+#### Constructor
+
+| Name | Description |
+|------|-------------|
+| `Scope(CodeBlocker codeBlocker)` | Creates a new scope that automatically writes opening brace `{`, increases indentation, and handles cleanup on disposal |
 
 #### Methods
 
 | Name | Return Type | Description |
 |------|-------------|-------------|
-| `Dispose()` | `void` | Decreases indentation level when scope is exited |
+| `Dispose()` | `void` | Decreases indentation level and writes closing brace `};` when scope is exited |
+
+#### Behavior
+
+- **On Creation**: Writes `{` and increases indentation level
+- **On Disposal**: Decreases indentation level and writes `};`
 
 ## Contributing
 

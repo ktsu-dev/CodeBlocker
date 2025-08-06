@@ -68,7 +68,7 @@ public sealed class CodeBlockerTests
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
-		codeBlocker.Indent++;
+		codeBlocker.Indent();
 		codeBlocker.WriteLine("indented line");
 		string result = codeBlocker.ToString();
 
@@ -84,9 +84,9 @@ public sealed class CodeBlockerTests
 
 		// Act
 		codeBlocker.WriteLine("line 1");
-		codeBlocker.Indent++;
+		codeBlocker.Indent();
 		codeBlocker.WriteLine("line 2 indented");
-		codeBlocker.Indent--;
+		codeBlocker.Outdent();
 		codeBlocker.WriteLine("line 3");
 		string result = codeBlocker.ToString();
 
@@ -99,7 +99,7 @@ public sealed class CodeBlockerTests
 	public void DisposeShouldNotThrowException()
 	{
 		// Arrange
-		CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 		codeBlocker.Dispose(); // Should not throw
@@ -109,10 +109,76 @@ public sealed class CodeBlockerTests
 	public void DisposeMultipleCallsShouldNotThrow()
 	{
 		// Arrange
-		CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 		codeBlocker.Dispose();
 		codeBlocker.Dispose(); // Second call should not throw
+	}
+
+	[TestMethod]
+	public void CreateWithCustomIndentStringShouldUseSpecifiedIndent()
+	{
+		// Arrange
+		const string customIndent = "  "; // Two spaces
+
+		// Act
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("test line");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual("  test line\r\n", result);
+		Assert.AreEqual(customIndent, codeBlocker.IndentString);
+	}
+
+	[TestMethod]
+	public void ConstructorWithCustomIndentStringShouldWork()
+	{
+		// Arrange
+		using StringWriter stringWriter = new();
+		const string customIndent = "    "; // Four spaces
+
+		// Act
+		using CodeBlocker codeBlocker = new(stringWriter, customIndent);
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("indented content");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		Assert.AreEqual("    indented content\r\n", result);
+		Assert.AreEqual(customIndent, codeBlocker.IndentString);
+	}
+
+	[TestMethod]
+	public void DefaultIndentStringShouldBeTab()
+	{
+		// Act
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		// Assert
+		Assert.AreEqual("\t", codeBlocker.IndentString);
+	}
+
+	[TestMethod]
+	public void CustomIndentStringWithMultipleIndentLevels()
+	{
+		// Arrange
+		const string customIndent = ">>"; // Custom string
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
+
+		// Act
+		codeBlocker.WriteLine("level 0");
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("level 1");
+		codeBlocker.Indent();
+		codeBlocker.WriteLine("level 2");
+		string result = codeBlocker.ToString();
+
+		// Assert
+		string expected = "level 0\r\n>>level 1\r\n>>>>level 2\r\n";
+		Assert.AreEqual(expected, result);
+		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
 }

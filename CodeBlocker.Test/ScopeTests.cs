@@ -14,13 +14,13 @@ public sealed class ScopeTests
 	{
 		// Arrange
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
-		int initialIndent = codeBlocker.Indent;
+		int initialIndent = codeBlocker.CurrentIndent;
 
 		// Act
 		using Scope scope = new(codeBlocker);
 
 		// Assert
-		Assert.AreEqual(initialIndent + 1, codeBlocker.Indent);
+		Assert.AreEqual(initialIndent + 1, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
 		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal));
 	}
@@ -30,14 +30,14 @@ public sealed class ScopeTests
 	{
 		// Arrange
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
-		int initialIndent = codeBlocker.Indent;
+		int initialIndent = codeBlocker.CurrentIndent;
 		Scope scope = new(codeBlocker);
 
 		// Act
 		scope.Dispose();
 
 		// Assert
-		Assert.AreEqual(initialIndent, codeBlocker.Indent);
+		Assert.AreEqual(initialIndent, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
 		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal));
 	}
@@ -134,5 +134,25 @@ public sealed class ScopeTests
 		string result = codeBlocker.ToString();
 		string expected = "{\r\n\tscope 1 content\r\n};\r\n{\r\n\tscope 2 content\r\n};\r\n";
 		Assert.AreEqual(expected, result);
+	}
+
+	[TestMethod]
+	public void ScopeWithCustomIndentStringShouldWork()
+	{
+		// Arrange
+		const string customIndent = "  "; // Two spaces
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
+
+		// Act
+		using (Scope scope = new(codeBlocker))
+		{
+			codeBlocker.WriteLine("custom indented content");
+		}
+
+		// Assert
+		string result = codeBlocker.ToString();
+		string expected = "{\r\n  custom indented content\r\n};\r\n";
+		Assert.AreEqual(expected, result);
+		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
 }
