@@ -1,5 +1,3 @@
-## v1.1.7 (patch)
+## v1.1.7
 
-Changes since v1.1.6:
-
-- Update configuration files for line endings and build settings ([@matt-edmondson](https://github.com/matt-edmondson))
+No significant changes detected since v1.1.7.
