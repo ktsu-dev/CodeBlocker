@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace CodeBlocker.Tests;
+
 using ktsu.CodeBlocker;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,9 +14,11 @@ public sealed class IntegrationTests
 	public void ComplexCodeGenerationShouldFormatCorrectly()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act - Simulate generating a class with methods
+
 		codeBlocker.WriteLine("public class TestClass");
 		using (Scope classScope = new(codeBlocker))
 		{
@@ -36,6 +39,7 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 		string expected = "public class TestClass\r\n" +
 					   "{\r\n" +
@@ -61,10 +65,12 @@ public sealed class IntegrationTests
 	public void DeepNestingShouldMaintainCorrectIndentation()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		const int nestingLevels = 5;
 
 		// Act
+
 		codeBlocker.WriteLine("start");
 
 		for (int i = 0; i < nestingLevels; i++)
@@ -76,15 +82,18 @@ public sealed class IntegrationTests
 		codeBlocker.WriteLine("end");
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 
 		// Verify it contains the expected structure
+
 		Assert.IsTrue(result.Contains("start\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("level 1\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("level 5\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("end\r\n", StringComparison.Ordinal));
 
 		// Count opening and closing braces to ensure they match
+
 		int openBraces = result.Count(c => c == '{');
 		int closeBraces = result.Count(c => c == '}');
 		Assert.AreEqual(openBraces, closeBraces);
@@ -94,9 +103,11 @@ public sealed class IntegrationTests
 	public void MixedContentTypesShouldFormatCorrectly()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
+
 		codeBlocker.WriteLine("// Header comment");
 		codeBlocker.WriteLine("namespace TestNamespace");
 		using (Scope namespaceScope = new(codeBlocker))
@@ -120,9 +131,11 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 
 		// Verify structure
+
 		Assert.IsTrue(result.StartsWith("// Header comment\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("namespace TestNamespace\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("\tusing System;\r\n", StringComparison.Ordinal));
@@ -137,19 +150,23 @@ public sealed class IntegrationTests
 	public void EmptyScopesShouldNotAffectOtherContent()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
+
 		codeBlocker.WriteLine("before");
 
 		using (Scope emptyScope = new(codeBlocker))
 		{
 			// Empty scope
+
 		}
 
 		codeBlocker.WriteLine("after");
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 		string expected = "before\r\n{\r\n};\r\nafter\r\n";
 		Assert.AreEqual(expected, result);
@@ -159,10 +176,12 @@ public sealed class IntegrationTests
 	public void MultipleCodeBlockersShouldBeIndependent()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker1 = CodeBlocker.Create();
 		using CodeBlocker codeBlocker2 = CodeBlocker.Create();
 
 		// Act
+
 		codeBlocker1.WriteLine("codeBlocker1 content");
 		using (Scope scope1 = new(codeBlocker1))
 		{
@@ -176,6 +195,7 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result1 = codeBlocker1.ToString();
 		string result2 = codeBlocker2.ToString();
 
@@ -191,10 +211,13 @@ public sealed class IntegrationTests
 	public void ComplexTemplateGenerationWithMultipleIndentTypesShouldWork()
 	{
 		// Arrange
+
 		using CodeBlocker htmlBlocker = CodeBlocker.Create("  "); // 2 spaces for HTML
+
 		using CodeBlocker jsBlocker = CodeBlocker.Create("\t"); // Tabs for JS
 
 		// Act - Generate HTML structure
+
 		htmlBlocker.WriteLine("<!DOCTYPE html>");
 		htmlBlocker.WriteLine("<html>");
 		using (Scope htmlScope = new(htmlBlocker))
@@ -214,6 +237,7 @@ public sealed class IntegrationTests
 		}
 
 		// Generate JavaScript structure
+
 		jsBlocker.WriteLine("function setupPage() ");
 		using (Scope functionScope = new(jsBlocker))
 		{
@@ -226,14 +250,17 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string htmlResult = htmlBlocker.ToString();
 		string jsResult = jsBlocker.ToString();
 
 		// Verify HTML uses 2-space indentation
+
 		Assert.IsTrue(htmlResult.Contains("  <head>\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(htmlResult.Contains("    <title>Test Page</title>\r\n", StringComparison.Ordinal));
 
 		// Verify JS uses tab indentation
+
 		Assert.IsTrue(jsResult.Contains("\tconst content = document.getElementById('content');\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(jsResult.Contains("\t\tcontent.addEventListener('click', handleClick);\r\n", StringComparison.Ordinal));
 	}
@@ -242,9 +269,11 @@ public sealed class IntegrationTests
 	public void MixedWriteOperationsWithComplexIndentationShouldFormatCorrectly()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act - Mix Write and WriteLine operations
+
 		codeBlocker.Write("public class ");
 		codeBlocker.Write("MyClass");
 		codeBlocker.WriteLine(" : BaseClass");
@@ -266,6 +295,7 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 		string expected =
 			"public class MyClass : BaseClass\r\n" +
@@ -285,6 +315,7 @@ public sealed class IntegrationTests
 	public void LargeScaleCodeGenerationShouldPerformReasonably()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		const int classCount = 100;
 		const int methodsPerClass = 10;
@@ -292,6 +323,7 @@ public sealed class IntegrationTests
 		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
 		// Act - Generate large amount of code
+
 		codeBlocker.WriteLine("namespace LargeTest");
 		using (Scope namespaceScope = new(codeBlocker))
 		{
@@ -320,9 +352,11 @@ public sealed class IntegrationTests
 		stopwatch.Stop();
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 
 		// Verify structure exists
+
 		Assert.IsTrue(result.Contains("namespace LargeTest\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("public class Class0\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains($"public class Class{classCount - 1}\r\n", StringComparison.Ordinal));
@@ -330,14 +364,17 @@ public sealed class IntegrationTests
 		Assert.IsTrue(result.Contains($"public void Method{methodsPerClass - 1}()\r\n", StringComparison.Ordinal));
 
 		// Verify performance (should complete in reasonable time)
-		Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000, $"Code generation took too long: {stopwatch.ElapsedMilliseconds}ms");
+
+		Assert.IsLessThan(5000L, stopwatch.ElapsedMilliseconds, $"Code generation took too long: {stopwatch.ElapsedMilliseconds}ms");
 
 		// Verify brace matching
+
 		int openBraces = result.Count(c => c == '{');
 		int closeBraces = result.Count(c => c == '}');
 		Assert.AreEqual(openBraces, closeBraces);
 
 		// Expected braces: 1 namespace + classCount classes + (classCount * methodsPerClass) methods
+
 		int expectedBraces = 1 + classCount + (classCount * methodsPerClass);
 		Assert.AreEqual(expectedBraces, openBraces);
 	}
@@ -346,9 +383,11 @@ public sealed class IntegrationTests
 	public void SharedStringWriterBetweenCodeBlockersShouldWork()
 	{
 		// Arrange
+
 		using StringWriter sharedWriter = new();
 
 		// Act
+
 		using (CodeBlocker codeBlocker1 = new(sharedWriter))
 		{
 			codeBlocker1.WriteLine("// First CodeBlocker");
@@ -364,19 +403,24 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result = sharedWriter.ToString();
 
 		// Verify both CodeBlockers wrote to the same StringWriter
+
 		Assert.IsTrue(result.Contains("// First CodeBlocker\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("\tcontent from first\r\n", StringComparison.Ordinal)); // Tab indent from first
+
 		Assert.IsTrue(result.Contains("// Second CodeBlocker with different indent\r\n", StringComparison.Ordinal));
 		Assert.IsTrue(result.Contains("  content from second\r\n", StringComparison.Ordinal)); // 2-space indent from second
+
 	}
 
 	[TestMethod]
 	public void ErrorRecoveryAfterExceptionShouldNotAffectFutureOperations()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert - Test error recovery
@@ -384,6 +428,7 @@ public sealed class IntegrationTests
 		try
 		{
 			// This might throw depending on implementation
+
 			codeBlocker.CurrentIndent = -10;
 		}
 		catch (Exception)
@@ -393,6 +438,7 @@ public sealed class IntegrationTests
 #pragma warning restore CA1031 // Do not catch general exception types
 
 		// Should still be able to continue normally
+
 		codeBlocker.CurrentIndent = 1;
 		codeBlocker.WriteLine("recovered content");
 
@@ -410,9 +456,11 @@ public sealed class IntegrationTests
 	public void UnicodeAndSpecialCharactersShouldBeHandledCorrectly()
 	{
 		// Arrange
+
 		using CodeBlocker codeBlocker = CodeBlocker.Create("→→"); // Unicode arrows as indent
 
 		// Act
+
 		codeBlocker.WriteLine("// Unicode test: αβγδε 中文 🚀");
 		using (Scope scope = new(codeBlocker))
 		{
@@ -422,6 +470,7 @@ public sealed class IntegrationTests
 		}
 
 		// Assert
+
 		string result = codeBlocker.ToString();
 
 		Assert.IsTrue(result.Contains("// Unicode test: αβγδε 中文 🚀\r\n", StringComparison.Ordinal));

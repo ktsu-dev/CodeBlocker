@@ -19,7 +19,7 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 - **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
 - **Standard Output Support**: Works with StringWriter for flexible output handling
-- **Cross-Platform**: Supports .NET 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
+- **Cross-Platform**: Supports .NET 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
 - **Lightweight**: Minimal dependencies, built on top of `ktsu.ScopedAction` for robust scope management
 - **Well-Tested**: Includes comprehensive unit and integration tests
 

@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.CodeBlocker;
+
 using System.CodeDom.Compiler;
 
 /// <summary>
