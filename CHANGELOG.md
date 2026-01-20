@@ -1,8 +1,8 @@
-## v1.1.8-pre.3 (prerelease)
+## v1.1.8 (patch)
 
-Changes since v1.1.8-pre.2:
+Changes since v1.1.7:
 
-- Sync scripts\update-winget-manifests.ps1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- feat: Upgrade to .NET 10.0 and update project dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.1.8-pre.3 (prerelease)
 
 Changes since v1.1.8-pre.2:
