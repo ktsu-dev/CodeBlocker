@@ -1,5 +1,3 @@
-## v1.1.8 (patch)
+## v1.1.8
 
-Changes since v1.1.7:
-
-- feat: Upgrade to .NET 10.0 and update project dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
+No significant changes detected since v1.1.8.
