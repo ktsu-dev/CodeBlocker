@@ -342,7 +342,7 @@ public sealed class CodeBlockerTests
 		// Assert - Should work with null indent string (treated as default)
 
 		Assert.IsNotNull(result);
-		Assert.IsTrue(result.Contains("test\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("test\r\n", StringComparison.Ordinal), "Result should contain test line with CRLF");
 	}
 
 	[TestMethod]
@@ -452,7 +452,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(maxDepth, codeBlocker.CurrentIndent);
-		Assert.IsTrue(result.StartsWith(new string('\t', maxDepth) + "deeply nested\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.StartsWith(new string('\t', maxDepth) + "deeply nested\r\n", StringComparison.Ordinal), "Result should start with deeply nested content prefixed by correct number of tabs");
 	}
 
 	[TestMethod]
@@ -470,8 +470,8 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.IsTrue(result.Contains(largeString, StringComparison.Ordinal));
-		Assert.IsTrue(result.EndsWith("\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains(largeString, StringComparison.Ordinal), "Result should contain the large string content");
+		Assert.IsTrue(result.EndsWith("\r\n", StringComparison.Ordinal), "Result should end with CRLF");
 	}
 
 	[TestMethod]

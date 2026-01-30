@@ -26,7 +26,7 @@ public sealed class ScopeTests
 
 		Assert.AreEqual(initialIndent + 1, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal), "Result should contain opening brace with newline");
 	}
 
 	[TestMethod]
@@ -46,7 +46,7 @@ public sealed class ScopeTests
 
 		Assert.AreEqual(initialIndent, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal), "Result should end with closing brace, semicolon, and newline");
 	}
 
 	[TestMethod]
@@ -230,8 +230,8 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("level 0\r\n", StringComparison.Ordinal));
-		Assert.IsTrue(result.Contains($"level {nestingLevels - 1}\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.Contains("level 0\r\n", StringComparison.Ordinal), "Result should contain first nesting level");
+		Assert.IsTrue(result.Contains($"level {nestingLevels - 1}\r\n", StringComparison.Ordinal), "Result should contain last nesting level");
 
 		// Count braces to ensure they match
 
@@ -294,10 +294,10 @@ public sealed class ScopeTests
 		Assert.IsGreaterThanOrEqualTo(0, codeBlocker.CurrentIndent); // Should be reasonable value
 
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal));
-		Assert.IsTrue(result.Contains("\t\t\t\t\tlevel 5 content\r\n", StringComparison.Ordinal)); // 5 tabs
+		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal), "Result should contain opening brace with newline");
+		Assert.IsTrue(result.Contains("\t\t\t\t\tlevel 5 content\r\n", StringComparison.Ordinal), "Result should contain content with 5 tabs indentation");
 
-		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal));
+		Assert.IsTrue(result.EndsWith("};\r\n", StringComparison.Ordinal), "Result should end with closing brace, semicolon, and newline");
 	}
 
 	[TestMethod]
