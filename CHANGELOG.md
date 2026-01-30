@@ -1,11 +1,9 @@
-## v1.1.9-pre.4 (prerelease)
+## v1.1.9 (patch)
 
-Changes since v1.1.9-pre.3:
+Changes since v1.1.8:
 
-- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync .gitignore ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Enhance test assertions with descriptive messages for clarity ([@matt-edmondson](https://github.com/matt-edmondson))
+- Remove .github\workflows\project.yml ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.1.9-pre.4 (prerelease)
 
 Changes since v1.1.9-pre.3:
