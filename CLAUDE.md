@@ -25,7 +25,7 @@ dotnet test --logger "console;verbosity=detailed"
 
 ## Architecture
 
-The library consists of two main classes:
+The library consists of three main classes:
 
 1. **`CodeBlocker`** (`CodeBlocker/CodeBlocker.cs`): Wraps `System.CodeDom.Compiler.IndentedTextWriter` to provide simplified code generation with:
    - Factory methods (`Create()`, `Create(string indentString)`) that manage `StringWriter` lifecycle
@@ -35,8 +35,13 @@ The library consists of two main classes:
 
 2. **`Scope`** (`CodeBlocker/Scope.cs`): Extends `ktsu.ScopedAction` to provide automatic brace handling:
    - On creation: writes `{` and increases indent
-   - On disposal: decreases indent and writes `};`
+   - On disposal: decreases indent and writes `}`
    - Used with C# `using` statements for clean nested code generation
+
+3. **`ScopeWithTrailingSemicolon`** (`CodeBlocker/Scope.cs`): Variant of `Scope` that appends a semicolon after the closing brace:
+   - On creation: writes `{` and increases indent
+   - On disposal: decreases indent and writes `};`
+   - Useful for C/C++ enum declarations, struct initializers, etc.
 
 ## SDK and Dependencies
 

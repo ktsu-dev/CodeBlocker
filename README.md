@@ -16,7 +16,7 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 
 - **Automatic Indentation**: Properly manages indentation levels as you create nested code blocks
 - **Configurable Indentation**: Support for custom indent strings (tabs, spaces, or any custom pattern)
-- **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`
+- **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`, with optional trailing semicolons via `ScopeWithTrailingSemicolon`
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
 - **Standard Output Support**: Works with StringWriter for flexible output handling
 - **Cross-Platform**: Supports .NET 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
@@ -96,12 +96,12 @@ namespace Example
 		public static void Main()
 		{
 			Console.WriteLine("Hello, World!");
-		};
-	};
-};
+		}
+	}
+}
 ```
 
-> **Note**: The `Scope` class automatically adds semicolons after closing braces (`};`) by design, which can be useful for code generation scenarios where you need to distinguish generated blocks.
+> **Note**: The `Scope` class writes closing braces without semicolons (`}`). If you need trailing semicolons after closing braces (`};`), such as for enum declarations or struct initializers in C/C++, use `ScopeWithTrailingSemicolon` instead.
 
 ### Custom Indentation
 
@@ -246,7 +246,30 @@ Helper class for managing indentation scopes with automatic brace handling. Buil
 
 | Name | Return Type | Description |
 |------|-------------|-------------|
-| `Dispose()` | `void` | Decreases indentation level and writes closing brace `};` when scope is exited |
+| `Dispose()` | `void` | Decreases indentation level and writes closing brace `}` when scope is exited |
+
+#### Behavior
+
+- **On Creation**: Writes `{` and increases indentation level
+- **On Disposal**: Decreases indentation level and writes `}`
+- **Exception Safety**: Guaranteed cleanup even if exceptions occur within the scope
+- **Resource Management**: Built on `ktsu.ScopedAction` for reliable resource handling
+
+### `ScopeWithTrailingSemicolon` Class
+
+Variant of `Scope` that appends a semicolon after the closing brace. Useful for code generation scenarios like C/C++ enum or struct declarations where a trailing semicolon is required.
+
+#### Constructor
+
+| Name | Description |
+|------|-------------|
+| `ScopeWithTrailingSemicolon(CodeBlocker codeBlocker)` | Creates a new scope that automatically writes opening brace `{`, increases indentation, and handles cleanup on disposal |
+
+#### Methods
+
+| Name | Return Type | Description |
+|------|-------------|-------------|
+| `Dispose()` | `void` | Decreases indentation level and writes closing brace with semicolon `};` when scope is exited |
 
 #### Behavior
 

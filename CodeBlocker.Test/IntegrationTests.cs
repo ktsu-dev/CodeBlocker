@@ -47,16 +47,16 @@ public sealed class IntegrationTests
 					   "\t{\r\n" +
 					   "\t\tvar x = 1;\r\n" +
 					   "\t\tConsole.WriteLine(x);\r\n" +
-					   "\t};\r\n" +
+					   "\t}\r\n" +
 					   "\r\n" +
 					   "\tpublic void Method2()\r\n" +
 					   "\t{\r\n" +
 					   "\t\tif (true)\r\n" +
 					   "\t\t{\r\n" +
 					   "\t\t\treturn;\r\n" +
-					   "\t\t};\r\n" +
-					   "\t};\r\n" +
-					   "};\r\n";
+					   "\t\t}\r\n" +
+					   "\t}\r\n" +
+					   "}\r\n";
 
 		Assert.AreEqual(expected, result);
 	}
@@ -168,7 +168,7 @@ public sealed class IntegrationTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "before\r\n{\r\n};\r\nafter\r\n";
+		string expected = "before\r\n{\r\n}\r\nafter\r\n";
 		Assert.AreEqual(expected, result);
 	}
 
@@ -199,8 +199,8 @@ public sealed class IntegrationTests
 		string result1 = codeBlocker1.ToString();
 		string result2 = codeBlocker2.ToString();
 
-		string expected1 = "codeBlocker1 content\r\n{\r\n\tinside scope1\r\n};\r\n";
-		string expected2 = "codeBlocker2 content\r\n{\r\n\tinside scope2\r\n};\r\n";
+		string expected1 = "codeBlocker1 content\r\n{\r\n\tinside scope1\r\n}\r\n";
+		string expected2 = "codeBlocker2 content\r\n{\r\n\tinside scope2\r\n}\r\n";
 
 		Assert.AreEqual(expected1, result1);
 		Assert.AreEqual(expected2, result2);
@@ -305,8 +305,8 @@ public sealed class IntegrationTests
 			"\tpublic MyClass(string field)\r\n" +
 			"\t{\r\n" +
 			"\t\t_field = field ?? throw new ArgumentNullException(nameof(field));\r\n" +
-			"\t};\r\n" +
-			"};\r\n";
+			"\t}\r\n" +
+			"}\r\n";
 
 		Assert.AreEqual(expected, result);
 	}

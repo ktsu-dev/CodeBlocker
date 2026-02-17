@@ -25,6 +25,29 @@ public class Scope(CodeBlocker codeBlocker)
 	private static void EndScope(CodeBlocker codeBlocker)
 	{
 		codeBlocker.Outdent();
+		codeBlocker.WriteLine("}");
+	}
+}
+
+/// <summary>
+/// Class to create a scope with a trailing semicolon in a code block.
+/// </summary>
+/// <remarks>
+/// Create a new instance of <see cref="ScopeWithTrailingSemicolon"/>.
+/// </remarks>
+/// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
+public class ScopeWithTrailingSemicolon(CodeBlocker codeBlocker)
+	: ScopedAction(onOpen: () => BeginScope(codeBlocker), onClose: () => EndScope(codeBlocker))
+{
+	private static void BeginScope(CodeBlocker codeBlocker)
+	{
+		codeBlocker.WriteLine("{");
+		codeBlocker.Indent();
+	}
+
+	private static void EndScope(CodeBlocker codeBlocker)
+	{
+		codeBlocker.Outdent();
 		codeBlocker.WriteLine("};");
 	}
 }
