@@ -1,0 +1,1 @@
+code generation;indentation;indented text writer;code blocks;source code generation;scope management;raii;text writer;template engines;fluent api;dotnet;csharp;netstandard
