@@ -22,8 +22,8 @@
     <PackageVersion Include="MSTest.TestFramework" Version="3.10.0" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
     <!-- SDK Dependencies -->
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.203" />
-    <PackageVersion Include="Microsoft.SourceLink.AzureRepos.Git" Version="10.0.203" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
+    <PackageVersion Include="Microsoft.SourceLink.AzureRepos.Git" Version="10.0.300" />
     <PackageVersion Include="Polyfill" Version="10.5.1" />
     <PackageVersion Include="System.Memory" Version="4.6.3" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
