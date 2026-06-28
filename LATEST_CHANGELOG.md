@@ -1,7 +1,8 @@
-## v1.2.2 (patch)
+## v1.2.3 (patch)
 
-Changes since v1.2.1:
+Changes since v1.2.2:
 
-- chore: remove unused SourceLink package versions ([@matt-edmondson](https://github.com/matt-edmondson))
-- Remove unused package references from project files ([@matt-edmondson](https://github.com/matt-edmondson))
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
 
