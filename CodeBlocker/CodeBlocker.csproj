@@ -4,8 +4,6 @@
 
   <ItemGroup>
     <PackageReference Include="ktsu.ScopedAction" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" />
-    <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" />
     <PackageReference Include="Polyfill" />
   </ItemGroup>
 
