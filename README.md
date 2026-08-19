@@ -2,11 +2,13 @@
 
 > An IndentedTextWriter that makes generating code blocks easier.
 
-[![License](https://img.shields.io/github/license/ktsu-dev/CodeBlocker)](https://github.com/ktsu-dev/CodeBlocker/blob/main/LICENSE.md)
-[![NuGet](https://img.shields.io/nuget/v/ktsu.CodeBlocker.svg)](https://www.nuget.org/packages/ktsu.CodeBlocker/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/ktsu.CodeBlocker.svg)](https://www.nuget.org/packages/ktsu.CodeBlocker/)
-[![Build Status](https://github.com/ktsu-dev/CodeBlocker/workflows/build/badge.svg)](https://github.com/ktsu-dev/CodeBlocker/actions)
-[![GitHub Stars](https://img.shields.io/github/stars/ktsu-dev/CodeBlocker?style=social)](https://github.com/ktsu-dev/CodeBlocker/stargazers)
+[![License](https://img.shields.io/github/license/ktsu-dev/CodeBlocker.svg?label=License&logo=nuget)](LICENSE.md)
+[![NuGet Version](https://img.shields.io/nuget/v/ktsu.CodeBlocker?label=Stable&logo=nuget)](https://nuget.org/packages/ktsu.CodeBlocker)
+[![NuGet Version](https://img.shields.io/nuget/vpre/ktsu.CodeBlocker?label=Latest&logo=nuget)](https://nuget.org/packages/ktsu.CodeBlocker)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/ktsu.CodeBlocker?label=Downloads&logo=nuget)](https://nuget.org/packages/ktsu.CodeBlocker)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ktsu-dev/CodeBlocker?label=Commits&logo=github)](https://github.com/ktsu-dev/CodeBlocker/commits/main)
+[![GitHub contributors](https://img.shields.io/github/contributors/ktsu-dev/CodeBlocker?label=Contributors&logo=github)](https://github.com/ktsu-dev/CodeBlocker/graphs/contributors)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/CodeBlocker/dotnet.yml?label=Build&logo=github)](https://github.com/ktsu-dev/CodeBlocker/actions)
 
 ## Introduction
 
