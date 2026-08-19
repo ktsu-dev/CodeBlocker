@@ -8,7 +8,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ktsu.CodeBlocker?label=Downloads&logo=nuget)](https://nuget.org/packages/ktsu.CodeBlocker)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ktsu-dev/CodeBlocker?label=Commits&logo=github)](https://github.com/ktsu-dev/CodeBlocker/commits/main)
 [![GitHub contributors](https://img.shields.io/github/contributors/ktsu-dev/CodeBlocker?label=Contributors&logo=github)](https://github.com/ktsu-dev/CodeBlocker/graphs/contributors)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/CodeBlocker/dotnet.yml?label=Build&logo=github)](https://github.com/ktsu-dev/CodeBlocker/actions)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/CodeBlocker/dotnet.yml?branch=main&label=Build&logo=github)](https://github.com/ktsu-dev/CodeBlocker/actions)
 
 ## Introduction
 
