@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="ktsu.ScopedAction" Version="1.1.33" />
+    <PackageVersion Include="ktsu.ScopedAction" Version="1.1.34" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.7.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.Fakes" Version="17.14.1" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
