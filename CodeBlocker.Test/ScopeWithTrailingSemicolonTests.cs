@@ -24,7 +24,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 
 		Assert.AreEqual(initialIndent + 1, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("{" + Environment.NewLine, StringComparison.Ordinal), "Result should contain opening brace with newline");
+		Assert.IsTrue(result.Contains("{" + CodeBlocker.DefaultNewLineString, StringComparison.Ordinal), "Result should contain opening brace with newline");
 	}
 
 	[TestMethod]
@@ -44,7 +44,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 
 		Assert.AreEqual(initialIndent, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.EndsWith("};" + Environment.NewLine, StringComparison.Ordinal), "Result should end with closing brace, semicolon, and newline");
+		Assert.IsTrue(result.EndsWith("};" + CodeBlocker.DefaultNewLineString, StringComparison.Ordinal), "Result should end with closing brace, semicolon, and newline");
 	}
 
 	[TestMethod]
@@ -64,7 +64,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{" + Environment.NewLine + "\tcontent inside scope" + Environment.NewLine + "};" + Environment.NewLine;
+		string expected = "{" + CodeBlocker.DefaultNewLineString + "\tcontent inside scope" + CodeBlocker.DefaultNewLineString + "};" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -90,7 +90,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{" + Environment.NewLine + "\tlevel 1" + Environment.NewLine + "\t{" + Environment.NewLine + "\t\tlevel 2" + Environment.NewLine + "\t};" + Environment.NewLine + "\tback to level 1" + Environment.NewLine + "};" + Environment.NewLine;
+		string expected = "{" + CodeBlocker.DefaultNewLineString + "\tlevel 1" + CodeBlocker.DefaultNewLineString + "\t{" + CodeBlocker.DefaultNewLineString + "\t\tlevel 2" + CodeBlocker.DefaultNewLineString + "\t};" + CodeBlocker.DefaultNewLineString + "\tback to level 1" + CodeBlocker.DefaultNewLineString + "};" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -125,7 +125,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{" + Environment.NewLine + "};" + Environment.NewLine;
+		string expected = "{" + CodeBlocker.DefaultNewLineString + "};" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -148,7 +148,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{" + Environment.NewLine + "  custom indented content" + Environment.NewLine + "};" + Environment.NewLine;
+		string expected = "{" + CodeBlocker.DefaultNewLineString + "  custom indented content" + CodeBlocker.DefaultNewLineString + "};" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
@@ -203,18 +203,18 @@ public sealed class ScopeWithTrailingSemicolonTests
 
 		string result = codeBlocker.ToString();
 		string expected =
-			"namespace Test" + Environment.NewLine +
-			"{" + Environment.NewLine +
-			"\tpublic class Example" + Environment.NewLine +
-			"\t{" + Environment.NewLine +
-			"\t\tpublic enum Color" + Environment.NewLine +
-			"\t\t{" + Environment.NewLine +
-			"\t\t\tRed," + Environment.NewLine +
-			"\t\t\tGreen," + Environment.NewLine +
-			"\t\t\tBlue" + Environment.NewLine +
-			"\t\t};" + Environment.NewLine +
-			"\t}" + Environment.NewLine +
-			"}" + Environment.NewLine;
+			"namespace Test" + CodeBlocker.DefaultNewLineString +
+			"{" + CodeBlocker.DefaultNewLineString +
+			"\tpublic class Example" + CodeBlocker.DefaultNewLineString +
+			"\t{" + CodeBlocker.DefaultNewLineString +
+			"\t\tpublic enum Color" + CodeBlocker.DefaultNewLineString +
+			"\t\t{" + CodeBlocker.DefaultNewLineString +
+			"\t\t\tRed," + CodeBlocker.DefaultNewLineString +
+			"\t\t\tGreen," + CodeBlocker.DefaultNewLineString +
+			"\t\t\tBlue" + CodeBlocker.DefaultNewLineString +
+			"\t\t};" + CodeBlocker.DefaultNewLineString +
+			"\t}" + CodeBlocker.DefaultNewLineString +
+			"}" + CodeBlocker.DefaultNewLineString;
 
 		Assert.AreEqual(expected, result);
 	}
@@ -236,7 +236,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{" + Environment.NewLine + "no indent" + Environment.NewLine + "};" + Environment.NewLine;
+		string expected = "{" + CodeBlocker.DefaultNewLineString + "no indent" + CodeBlocker.DefaultNewLineString + "};" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 }

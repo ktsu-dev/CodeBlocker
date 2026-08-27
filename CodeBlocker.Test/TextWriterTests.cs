@@ -89,7 +89,7 @@ public sealed class TextWriterTests
 
 		// Writing after disposal would throw if the StringWriter were still open; instead the
 		// already-buffered text is all that remains readable.
-		Assert.AreEqual($"a{Environment.NewLine}", codeBlocker.ToString());
+		Assert.AreEqual($"a{CodeBlocker.DefaultNewLineString}", codeBlocker.ToString());
 	}
 
 	[TestMethod]
@@ -123,7 +123,7 @@ public sealed class TextWriterTests
 		// Documented behaviour: no copy is kept, and ToString does not throw, so debuggers and
 		// diagnostics stay safe. The generated code is read from the writer instead.
 		Assert.AreEqual(typeof(CodeBlocker).ToString(), codeBlocker.ToString());
-		Assert.AreEqual("a" + Environment.NewLine, target.ToString());
+		Assert.AreEqual("a" + CodeBlocker.DefaultNewLineString, target.ToString());
 	}
 
 	[TestMethod]

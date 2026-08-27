@@ -19,12 +19,25 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class NewLineTests
 {
 	[TestMethod]
-	public void DefaultNewLineStringIsTheHostTerminator()
+	public void TheDefaultTerminatorIsLineFeedRatherThanTheHostTerminator()
 	{
+		// The point of the default: the same calls give the same bytes on every platform. This
+		// assertion is only meaningful on a host whose terminator is not LF, so it is written to
+		// fail loudly there rather than to pass vacuously everywhere.
 		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
-		Assert.AreEqual(NewLines.Host, codeBlocker.NewLineString);
-		Assert.AreEqual(Environment.NewLine, codeBlocker.NewLineString);
+		Assert.AreEqual(NewLines.Lf, codeBlocker.NewLineString);
+		Assert.AreEqual(CodeBlocker.DefaultNewLineString, codeBlocker.NewLineString);
+	}
+
+	[TestMethod]
+	public void TheHostTerminatorIsStillAvailableByAskingForIt()
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Host);
+
+		codeBlocker.WriteLine("a");
+
+		Assert.AreEqual($"a{Environment.NewLine}", codeBlocker.ToString());
 	}
 
 	[TestMethod]
@@ -64,11 +77,11 @@ public sealed class NewLineTests
 	}
 
 	[TestMethod]
-	public void NullNewLineStringFallsBackToTheHostTerminator()
+	public void NullNewLineStringFallsBackToTheDefault()
 	{
 		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, null!);
 
-		Assert.AreEqual(NewLines.Host, codeBlocker.NewLineString);
+		Assert.AreEqual(CodeBlocker.DefaultNewLineString, codeBlocker.NewLineString);
 	}
 
 	[TestMethod]
