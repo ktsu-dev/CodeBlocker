@@ -24,7 +24,7 @@ public sealed class ScopeTests
 
 		Assert.AreEqual(initialIndent + 1, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal), "Result should contain opening brace with newline");
+		Assert.IsTrue(result.Contains("{" + Environment.NewLine, StringComparison.Ordinal), "Result should contain opening brace with newline");
 	}
 
 	[TestMethod]
@@ -44,7 +44,7 @@ public sealed class ScopeTests
 
 		Assert.AreEqual(initialIndent, codeBlocker.CurrentIndent);
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.EndsWith("}\r\n", StringComparison.Ordinal), "Result should end with closing brace and newline");
+		Assert.IsTrue(result.EndsWith("}" + Environment.NewLine, StringComparison.Ordinal), "Result should end with closing brace and newline");
 	}
 
 	[TestMethod]
@@ -64,7 +64,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\n\tcontent inside scope\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "\tcontent inside scope" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -90,7 +90,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\n\tlevel 1\r\n\t{\r\n\t\tlevel 2\r\n\t}\r\n\tback to level 1\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "\tlevel 1" + Environment.NewLine + "\t{" + Environment.NewLine + "\t\tlevel 2" + Environment.NewLine + "\t}" + Environment.NewLine + "\tback to level 1" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -126,7 +126,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -152,7 +152,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\n\tscope 1 content\r\n}\r\n{\r\n\tscope 2 content\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "\tscope 1 content" + Environment.NewLine + "}" + Environment.NewLine + "{" + Environment.NewLine + "\tscope 2 content" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -175,7 +175,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\n  custom indented content\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "  custom indented content" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
@@ -228,8 +228,8 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("level 0\r\n", StringComparison.Ordinal), "Result should contain first nesting level");
-		Assert.IsTrue(result.Contains($"level {nestingLevels - 1}\r\n", StringComparison.Ordinal), "Result should contain last nesting level");
+		Assert.IsTrue(result.Contains("level 0" + Environment.NewLine, StringComparison.Ordinal), "Result should contain first nesting level");
+		Assert.IsTrue(result.Contains($"level {nestingLevels - 1}{Environment.NewLine}", StringComparison.Ordinal), "Result should contain last nesting level");
 
 		// Count braces to ensure they match
 
@@ -266,7 +266,7 @@ public sealed class ScopeTests
 		// Note: After manual Outdent within scope, the closing }; will be at the current indent level
 		// The scope ends at whatever the current indent is when Dispose() is called
 
-		string expected = "\t{\r\n\t\tdouble indented\r\n\tsingle indented\r\n}\r\nback to manual indent\r\n";
+		string expected = "\t{" + Environment.NewLine + "\t\tdouble indented" + Environment.NewLine + "\tsingle indented" + Environment.NewLine + "}" + Environment.NewLine + "back to manual indent" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -292,10 +292,10 @@ public sealed class ScopeTests
 		Assert.IsGreaterThanOrEqualTo(0, codeBlocker.CurrentIndent); // Should be reasonable value
 
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("{\r\n", StringComparison.Ordinal), "Result should contain opening brace with newline");
-		Assert.IsTrue(result.Contains("\t\t\t\t\tlevel 5 content\r\n", StringComparison.Ordinal), "Result should contain content with 5 tabs indentation");
+		Assert.IsTrue(result.Contains("{" + Environment.NewLine, StringComparison.Ordinal), "Result should contain opening brace with newline");
+		Assert.IsTrue(result.Contains("\t\t\t\t\tlevel 5 content" + Environment.NewLine, StringComparison.Ordinal), "Result should contain content with 5 tabs indentation");
 
-		Assert.IsTrue(result.EndsWith("}\r\n", StringComparison.Ordinal), "Result should end with closing brace and newline");
+		Assert.IsTrue(result.EndsWith("}" + Environment.NewLine, StringComparison.Ordinal), "Result should end with closing brace and newline");
 	}
 
 	[TestMethod]
@@ -345,7 +345,7 @@ public sealed class ScopeTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "{\r\nno indent\r\n}\r\n";
+		string expected = "{" + Environment.NewLine + "no indent" + Environment.NewLine + "}" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
