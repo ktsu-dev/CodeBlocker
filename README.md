@@ -22,6 +22,7 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 - **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`, with optional trailing semicolons via `ScopeWithTrailingSemicolon`
 - **More Than Braces**: Parenthesis, bracket, bare-indent, `#region`, `#if` and `#pragma warning` scopes, each balanced by disposal
 - **Preamble Helpers**: One call each for the auto-generated marker, the nullable context, the namespace declaration, and the using directives
+- **Template Object Model**: Describe a whole source file as objects — types, members, operators, generics, XML docs — and let the model own the punctuation, spacing and indentation
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
 - **Any TextWriter**: Buffer into a `StringWriter`, or stream straight to a file or any other `TextWriter`
 - **Cross-Platform**: Supports .NET 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
@@ -153,6 +154,122 @@ using (new Scope(scopeCodeBlocker))
     }
 }
 ```
+
+### Describing Code as Templates
+
+Writing a generator against `WriteLine` means owning every brace, comma and blank line yourself, and re-deriving the same layout decisions in every generator you write. The `ktsu.CodeBlocker.Templates` namespace lets you describe the file instead:
+
+```csharp
+namespace CodeBlockerExample;
+
+using ktsu.CodeBlocker;
+using ktsu.CodeBlocker.Templates;
+
+internal class TemplateExample
+{
+	public static string GenerateCode()
+	{
+		SourceFileTemplate file = new()
+		{
+			FileName = "Money.g.cs",
+			Namespace = "Contoso.Billing",
+			Usings = { "System" },
+		};
+
+		ClassTemplate money = new()
+		{
+			Kind = TypeKind.RecordStruct,
+			Name = "Money",
+			Keywords = { "public", "readonly" },
+			PositionalParameters = { new ParameterTemplate { Type = "decimal", Name = "Amount" } },
+			Documentation = new DocComment { Summary = "An amount of money." },
+		};
+
+		money.Members.Add(new OperatorTemplate
+		{
+			Type = "Money",
+			Keywords = { "public", "static" },
+			Symbol = "+",
+			Parameters =
+			{
+				new ParameterTemplate { Type = "Money", Name = "left" },
+				new ParameterTemplate { Type = "Money", Name = "right" },
+			},
+			BodyFactory = codeBlocker => codeBlocker.Write("=> new(left.Amount + right.Amount);"),
+		});
+
+		file.Classes.Add(money);
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.AddSourceFile(file);
+		return codeBlocker.ToString();
+	}
+}
+```
+
+Produces:
+
+```csharp
+namespace Contoso.Billing;
+
+using System;
+
+/// <summary>An amount of money.</summary>
+public readonly record struct Money(decimal Amount)
+{
+	public static Money operator +(Money left, Money right) => new(left.Amount + right.Amount);
+}
+```
+
+Note what you did not have to decide: that the attribute goes on its own line, that the operator is indented one level, that members are separated by a blank line, that a positional record with a body still needs braces while one without gets a semicolon.
+
+Collection properties are read-only, so use collection-initializer syntax — `Keywords = { "public" }` — rather than assignment.
+
+#### Bodies
+
+A member body is written by a callback into a nested `CodeBlocker` and then spliced in, **re-indented line by line** to wherever it lands. Nest it as deeply as you like:
+
+```csharp
+new MethodTemplate
+{
+	Type = "int",
+	Name = "Add",
+	Keywords = { "public" },
+	Parameters =
+	{
+		new ParameterTemplate { Type = "int", Name = "a" },
+		new ParameterTemplate { Type = "int", Name = "b" },
+	},
+	BodyFactory = codeBlocker =>
+	{
+		using Scope scope = new(codeBlocker);
+		codeBlocker.WriteLine("return a + b;");
+	},
+}
+```
+
+A callback that writes a single line becomes an expression body on the declaration line; one that writes several becomes a braced body on the following lines; one that writes nothing becomes `{ }`; and a `null` `BodyFactory` declares the member with no body at all, for an abstract, partial or interface declaration.
+
+#### XML documentation
+
+`DocComment` models documentation as data rather than as pre-formatted comment lines, so the content is escaped, the tags come out in canonical order, and a multi-line description is prefixed correctly:
+
+```csharp
+Documentation = new DocComment
+{
+	Summary = "Clamps a ratio to the range <0, 1>.",
+	Params = { new DocTag { Name = "value", Text = "The ratio." } },
+	Returns = "The clamped ratio.",
+}
+```
+
+```csharp
+/// <summary>Clamps a ratio to the range &lt;0, 1&gt;.</summary>
+/// <param name="value">The ratio.</param>
+/// <returns>The clamped ratio.</returns>
+```
+
+Set `EscapeText = false` when the text deliberately embeds markup such as `<see cref="…"/>`. `Validate(parameterNames, typeParameterNames)` returns one message per mismatched or missing `<param>`/`<typeparam>` entry, so a generator can report them as build diagnostics instead of letting CS1572 and CS1573 surface inside the generated file.
 
 ### More Than Braces
 
@@ -438,6 +555,33 @@ Helper class for managing indentation scopes with automatic brace handling. Buil
 - **On Disposal**: Decreases indentation level and writes `}`
 - **Exception Safety**: Guaranteed cleanup even if exceptions occur within the scope
 - **Resource Management**: Built on `ktsu.ScopedAction` for reliable resource handling
+
+### Template Object Model
+
+`ktsu.CodeBlocker.Templates`. See [Describing Code as Templates](#describing-code-as-templates).
+
+| Type | Describes |
+|------|-----------|
+| `SourceFileTemplate` | A whole file: namespace, usings, types |
+| `ClassTemplate` | A type of any `TypeKind`, its generics, base list, constraints, members and nested types |
+| `FieldTemplate` | A field, with an optional initializer |
+| `PropertyTemplate` | A property: automatic, expression-bodied, or a full accessor list |
+| `AccessorTemplate` | One accessor, as `AccessorKind.Auto`, `.Expression` or `.Block`, with an optional modifier |
+| `MethodTemplate` | A method, its generics, parameters, constraints and body |
+| `ConstructorTemplate` | A constructor, its parameters, its `base`/`this` initializer and body |
+| `OperatorTemplate` | An operator or an `implicit`/`explicit` conversion |
+| `EnumMemberTemplate` | One enum member |
+| `ParameterTemplate` | One parameter, with an optional default |
+| `DocComment`, `DocTag` | XML documentation as data |
+| `TemplateBase` | What every template carries: name, type, modifiers, attributes, comments, documentation |
+
+| Enum | Values |
+|------|--------|
+| `TypeKind` | `Class`, `Struct`, `Interface`, `Record`, `RecordStruct`, `Enum` |
+| `AccessorKind` | `Auto`, `Expression`, `Block` |
+| `OperatorKind` | `Normal`, `Implicit`, `Explicit` |
+
+Rendering entry points: `codeBlocker.AddSourceFile(file)`, `codeBlocker.AddClass(type)`, or `template.WriteTo(codeBlocker)` for any single template.
 
 ### `CodeBlockerExtensions` Class
 
