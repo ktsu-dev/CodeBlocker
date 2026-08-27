@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 
 /// <summary>
@@ -40,7 +41,7 @@ public class MethodTemplate : MemberTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		base.WriteTo(codeBlocker);
 		TemplateRendering.WriteTypeParameterList(codeBlocker, TypeParameters);

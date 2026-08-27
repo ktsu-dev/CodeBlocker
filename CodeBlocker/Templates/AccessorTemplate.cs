@@ -2,6 +2,8 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
+
 /// <summary>
 /// How a property accessor is written.
 /// </summary>
@@ -77,7 +79,7 @@ public class AccessorTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public void WriteTo(CodeBlocker codeBlocker, string keyword)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		string prefix = string.IsNullOrEmpty(Modifier) ? keyword : $"{Modifier} {keyword}";
 

@@ -2,6 +2,8 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
+
 /// <summary>
 /// Describes one parameter of a method, constructor, operator, or positional record.
 /// </summary>
@@ -19,7 +21,7 @@ public class ParameterTemplate : TemplateBase
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		codeBlocker.AddInlineAttributes(Attributes);
 		codeBlocker.AddKeywords(Keywords);

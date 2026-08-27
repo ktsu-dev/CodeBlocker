@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 
 /// <summary>
@@ -60,7 +61,7 @@ public class OperatorTemplate : MemberTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		// Not through the MemberTemplate implementation: an operator's signature is its symbol and
 		// result type, not a type followed by a name.

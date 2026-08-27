@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 
 /// <summary>
@@ -69,7 +70,7 @@ public abstract class TemplateBase
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public virtual void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		codeBlocker.AddDocumentation(Documentation);
 		codeBlocker.AddComments(Comments);
@@ -84,7 +85,7 @@ public abstract class TemplateBase
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	protected void WriteDefaultValueTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		if (string.IsNullOrEmpty(DefaultValue))
 		{
@@ -112,8 +113,8 @@ public static class TemplateBaseExtensions
 	/// </exception>
 	public static CodeBlocker AddTemplate(this CodeBlocker codeBlocker, TemplateBase template)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(template);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(template);
 
 		codeBlocker.AddDocumentation(template.Documentation);
 		codeBlocker.AddComments(template.Comments);
@@ -131,7 +132,7 @@ public static class TemplateBaseExtensions
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public static CodeBlocker AddDocumentation(this CodeBlocker codeBlocker, DocComment? documentation)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		documentation?.WriteTo(codeBlocker);
 		return codeBlocker;
@@ -148,8 +149,8 @@ public static class TemplateBaseExtensions
 	/// </exception>
 	public static CodeBlocker AddComments(this CodeBlocker codeBlocker, IEnumerable<string> comments)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(comments);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(comments);
 
 		foreach (string comment in comments)
 		{
@@ -175,8 +176,8 @@ public static class TemplateBaseExtensions
 	/// </exception>
 	public static CodeBlocker AddAttributes(this CodeBlocker codeBlocker, IEnumerable<string> attributes)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(attributes);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(attributes);
 
 		foreach (string attribute in attributes)
 		{
@@ -200,8 +201,8 @@ public static class TemplateBaseExtensions
 	/// </exception>
 	public static CodeBlocker AddInlineAttributes(this CodeBlocker codeBlocker, IEnumerable<string> attributes)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(attributes);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(attributes);
 
 		foreach (string attribute in attributes)
 		{
@@ -222,8 +223,8 @@ public static class TemplateBaseExtensions
 	/// </exception>
 	public static CodeBlocker AddKeywords(this CodeBlocker codeBlocker, IEnumerable<string> keywords)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(keywords);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(keywords);
 
 		if (keywords.Any())
 		{

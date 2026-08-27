@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 
 /// <summary>
@@ -61,7 +62,7 @@ public class ClassTemplate : TemplateBase
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		base.WriteTo(codeBlocker);
 
@@ -169,8 +170,8 @@ public static class ClassTemplateExtensions
 	/// </exception>
 	public static CodeBlocker AddClass(this CodeBlocker codeBlocker, ClassTemplate classTemplate)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(classTemplate);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(classTemplate);
 
 		classTemplate.WriteTo(codeBlocker);
 		return codeBlocker;

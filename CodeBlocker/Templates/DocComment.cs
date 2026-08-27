@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 using System.Text;
 
@@ -98,7 +99,7 @@ public class DocComment
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	public void WriteTo(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		if (InheritDoc)
 		{
@@ -149,8 +150,8 @@ public class DocComment
 	/// <exception cref="ArgumentNullException">Either argument is <see langword="null"/>.</exception>
 	public IReadOnlyList<string> Validate(IEnumerable<string> parameterNames, IEnumerable<string> typeParameterNames)
 	{
-		ArgumentNullException.ThrowIfNull(parameterNames);
-		ArgumentNullException.ThrowIfNull(typeParameterNames);
+		Ensure.NotNull(parameterNames);
+		Ensure.NotNull(typeParameterNames);
 
 		List<string> issues = [];
 		Check(Params, [.. parameterNames], "param", "parameter");

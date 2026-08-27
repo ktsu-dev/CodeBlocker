@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker;
 
+using Polyfills;
 using System.CodeDom.Compiler;
 
 /// <summary>
@@ -124,7 +125,7 @@ public class CodeBlocker : IDisposable
 	/// <exception cref="ArgumentNullException"><paramref name="writer"/> is <see langword="null"/>.</exception>
 	public CodeBlocker(TextWriter writer, string indentString, string newLineString)
 	{
-		ArgumentNullException.ThrowIfNull(writer);
+		Ensure.NotNull(writer);
 
 		// indentString is deliberately not null-checked: a null indent has always meant "no
 		// indentation" here, and CreateWithNullIndentStringShouldWork pins that behaviour.

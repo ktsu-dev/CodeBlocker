@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using Polyfills;
 using System.Collections.ObjectModel;
 
 /// <summary>
@@ -43,8 +44,8 @@ public static class SourceFileTemplateExtensions
 	/// </exception>
 	public static CodeBlocker AddSourceFile(this CodeBlocker codeBlocker, SourceFileTemplate template)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(template);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(template);
 
 		codeBlocker.AddTemplate(template);
 		codeBlocker.WriteFileScopedNamespace(template.Namespace);
@@ -64,8 +65,8 @@ public static class SourceFileTemplateExtensions
 	/// </exception>
 	public static CodeBlocker AddClasses(this CodeBlocker codeBlocker, IEnumerable<ClassTemplate> classes)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
-		ArgumentNullException.ThrowIfNull(classes);
+		Ensure.NotNull(codeBlocker);
+		Ensure.NotNull(classes);
 
 		foreach (ClassTemplate classTemplate in classes)
 		{

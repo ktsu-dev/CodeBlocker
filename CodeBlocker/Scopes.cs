@@ -2,6 +2,7 @@
 
 namespace ktsu.CodeBlocker;
 
+using Polyfills;
 using ktsu.ScopedAction;
 
 /// <summary>
@@ -30,7 +31,7 @@ public class DelimiterScope(CodeBlocker codeBlocker, string open, string close)
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	protected static void Begin(CodeBlocker codeBlocker, string open)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		codeBlocker.WriteLine(open);
 		codeBlocker.Indent();
@@ -44,7 +45,7 @@ public class DelimiterScope(CodeBlocker codeBlocker, string open, string close)
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	protected static void End(CodeBlocker codeBlocker, string close)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 
 		codeBlocker.Outdent();
 		codeBlocker.WriteLine(close);
@@ -84,13 +85,13 @@ public class IndentScope(CodeBlocker codeBlocker)
 {
 	private static void Begin(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.Indent();
 	}
 
 	private static void End(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.Outdent();
 	}
 }
@@ -109,13 +110,13 @@ public class RegionScope(CodeBlocker codeBlocker, string name)
 {
 	private static void Begin(CodeBlocker codeBlocker, string name)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine(string.IsNullOrEmpty(name) ? "#region" : $"#region {name}");
 	}
 
 	private static void End(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine("#endregion");
 	}
 }
@@ -135,13 +136,13 @@ public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 {
 	private static void Begin(CodeBlocker codeBlocker, string condition)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine($"#if {condition}");
 	}
 
 	private static void End(CodeBlocker codeBlocker)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine("#endif");
 	}
 }
@@ -175,13 +176,13 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 
 	private static void Begin(CodeBlocker codeBlocker, string warnings)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine($"#pragma warning disable {warnings}");
 	}
 
 	private static void End(CodeBlocker codeBlocker, string warnings)
 	{
-		ArgumentNullException.ThrowIfNull(codeBlocker);
+		Ensure.NotNull(codeBlocker);
 		codeBlocker.WriteLine($"#pragma warning restore {warnings}");
 	}
 }
