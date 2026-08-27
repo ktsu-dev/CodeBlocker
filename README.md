@@ -21,7 +21,7 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 - **Configurable Line Endings**: Pin the line terminator so the same calls produce byte-identical output on every platform
 - **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`, with optional trailing semicolons via `ScopeWithTrailingSemicolon`
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
-- **Standard Output Support**: Works with StringWriter for flexible output handling
+- **Any TextWriter**: Buffer into a `StringWriter`, or stream straight to a file or any other `TextWriter`
 - **Cross-Platform**: Supports .NET 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, .NET Standard 2.0 and 2.1
 - **Lightweight**: Minimal dependencies, built on top of `ktsu.ScopedAction` for robust scope management
 - **Well-Tested**: Includes comprehensive unit and integration tests
@@ -152,6 +152,36 @@ using (new Scope(scopeCodeBlocker))
 }
 ```
 
+### Writing Somewhere Other Than a String
+
+`CodeBlocker.Create()` buffers into a `StringWriter` it owns, which is what makes `ToString()` able to hand the code back. You can instead give it any `TextWriter` — a file, a `TextWriter` handed to you by a build task, a test double:
+
+```csharp
+namespace CodeBlockerExample;
+
+using ktsu.CodeBlocker;
+
+internal class FileExample
+{
+	public static void GenerateToFile(string path)
+	{
+		using StreamWriter file = new(path);
+		using CodeBlocker codeBlocker = new(file, CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		codeBlocker.WriteLine("public class Example");
+		using (new Scope(codeBlocker))
+		{
+			codeBlocker.WriteLine("public int Value { get; set; }");
+		}
+	}
+}
+```
+
+Two things to know:
+
+- **A writer you supply stays yours.** `CodeBlocker.Dispose()` disposes only the `StringWriter` that `Create()` made for itself; it never disposes a writer you passed in.
+- **`ToString()` only works when buffered.** A `CodeBlocker` over a `StreamWriter` keeps no copy of what it wrote, so `ToString()` returns the type name rather than the code — check `IsBuffered` if you need to know which case you are in. Read the generated code from your own writer instead.
+
 ### Line Endings
 
 `CodeBlocker` writes through `IndentedTextWriter`, which terminates lines with `Environment.NewLine`. That makes output depend on the machine that produced it — the same calls give you CRLF on Windows and LF everywhere else.
@@ -252,6 +282,9 @@ The main class for building indented code blocks.
 | `CodeBlocker(StringWriter stringWriter)` | Creates a new CodeBlocker with the specified StringWriter using tab indentation |
 | `CodeBlocker(StringWriter stringWriter, string indentString)` | Creates a new CodeBlocker with the specified StringWriter and custom indent string |
 | `CodeBlocker(StringWriter stringWriter, string indentString, string newLineString)` | As above, and pins the line terminator written at the end of every line |
+| `CodeBlocker(TextWriter writer)` | Creates a new CodeBlocker over any TextWriter using tab indentation |
+| `CodeBlocker(TextWriter writer, string indentString)` | Creates a new CodeBlocker over any TextWriter with a custom indent string |
+| `CodeBlocker(TextWriter writer, string indentString, string newLineString)` | As above, and pins the line terminator |
 
 #### Properties
 
@@ -260,6 +293,7 @@ The main class for building indented code blocks.
 | `CurrentIndent` | `int` | Gets or sets the current indentation level |
 | `IndentString` | `string` | Gets the current indent string being used (e.g., "\t", "  ", "    ") |
 | `NewLineString` | `string` | Gets the line terminator written at the end of every line |
+| `IsBuffered` | `bool` | Whether `ToString()` can return the generated code, i.e. whether the underlying writer is a `StringWriter` |
 
 #### Methods
 

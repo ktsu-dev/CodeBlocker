@@ -12,9 +12,10 @@ public class CodeBlocker : IDisposable
 	/// <summary>The indent string used when none is specified: a single tab.</summary>
 	public const string DefaultIndentString = "\t";
 
-	private readonly StringWriter stringWriter;
+	private readonly TextWriter writer;
+
 	private bool disposedValue;
-	private bool shouldDisposeStringWriter;
+	private bool shouldDisposeWriter;
 
 	private IndentedTextWriter IndentedTextWriter { get; }
 
@@ -35,11 +36,30 @@ public class CodeBlocker : IDisposable
 	public string NewLineString { get; }
 
 	/// <summary>
+	/// Gets a value indicating whether <see cref="ToString"/> can return the generated code.
+	/// </summary>
+	/// <remarks>
+	/// True when this instance writes to a <see cref="StringWriter"/> — which is always the case for
+	/// instances from <see cref="Create()"/>. A <see cref="CodeBlocker"/> built over some other
+	/// <see cref="TextWriter"/> streams straight through to it and keeps no copy, so the generated
+	/// code has to be read from that writer instead.
+	/// </remarks>
+	public bool IsBuffered => writer is StringWriter;
+
+	/// <summary>
+	/// The writer as a <see cref="StringWriter"/> when it is one, otherwise <see langword="null"/>.
+	/// Only a <see cref="StringWriter"/> buffers what was written, so this is what lets
+	/// <see cref="ToString"/> hand the generated code back. Kept as a property rather than a field
+	/// so there is exactly one writer reference to own and dispose.
+	/// </summary>
+	private StringWriter? BufferedWriter => writer as StringWriter;
+
+	/// <summary>
 	/// Create a new instance of <see cref="CodeBlocker"/>.
 	/// </summary>
 	/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
 	public CodeBlocker(StringWriter stringWriter)
-		: this(stringWriter, DefaultIndentString, NewLines.Host)
+		: this((TextWriter)stringWriter, DefaultIndentString, NewLines.Host)
 	{
 	}
 
@@ -49,7 +69,7 @@ public class CodeBlocker : IDisposable
 	/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
 	/// <param name="indentString">The string to use for indentation.</param>
 	public CodeBlocker(StringWriter stringWriter, string indentString)
-		: this(stringWriter, indentString, NewLines.Host)
+		: this((TextWriter)stringWriter, indentString, NewLines.Host)
 	{
 	}
 
@@ -62,16 +82,55 @@ public class CodeBlocker : IDisposable
 	/// The line terminator to write at the end of every line. <see langword="null"/> selects
 	/// <see cref="NewLines.Host"/>.
 	/// </param>
-	/// <exception cref="ArgumentNullException"><paramref name="stringWriter"/> is <see langword="null"/>.</exception>
 	public CodeBlocker(StringWriter stringWriter, string indentString, string newLineString)
+		: this((TextWriter)stringWriter, indentString, newLineString)
 	{
-		ArgumentNullException.ThrowIfNull(stringWriter);
+	}
+
+	/// <summary>
+	/// Create a new instance of <see cref="CodeBlocker"/> over any <see cref="TextWriter"/>.
+	/// </summary>
+	/// <param name="writer">The <see cref="TextWriter"/> to write to.</param>
+	/// <remarks>
+	/// The writer is not disposed by <see cref="Dispose()"/> — whoever created it owns it. Only the
+	/// <see cref="StringWriter"/> that <see cref="Create()"/> makes for itself is disposed here.
+	/// </remarks>
+	public CodeBlocker(TextWriter writer)
+		: this(writer, DefaultIndentString, NewLines.Host)
+	{
+	}
+
+	/// <summary>
+	/// Create a new instance of <see cref="CodeBlocker"/> over any <see cref="TextWriter"/> with a
+	/// custom indent string.
+	/// </summary>
+	/// <param name="writer">The <see cref="TextWriter"/> to write to.</param>
+	/// <param name="indentString">The string to use for indentation.</param>
+	public CodeBlocker(TextWriter writer, string indentString)
+		: this(writer, indentString, NewLines.Host)
+	{
+	}
+
+	/// <summary>
+	/// Create a new instance of <see cref="CodeBlocker"/> over any <see cref="TextWriter"/> with a
+	/// custom indent string and line terminator.
+	/// </summary>
+	/// <param name="writer">The <see cref="TextWriter"/> to write to.</param>
+	/// <param name="indentString">The string to use for indentation.</param>
+	/// <param name="newLineString">
+	/// The line terminator to write at the end of every line. <see langword="null"/> selects
+	/// <see cref="NewLines.Host"/>.
+	/// </param>
+	/// <exception cref="ArgumentNullException"><paramref name="writer"/> is <see langword="null"/>.</exception>
+	public CodeBlocker(TextWriter writer, string indentString, string newLineString)
+	{
+		ArgumentNullException.ThrowIfNull(writer);
 
 		// indentString is deliberately not null-checked: a null indent has always meant "no
 		// indentation" here, and CreateWithNullIndentStringShouldWork pins that behaviour.
 		newLineString ??= NewLines.Host;
 
-		this.stringWriter = stringWriter;
+		this.writer = writer;
 		IndentString = indentString;
 		NewLineString = newLineString;
 
@@ -79,8 +138,8 @@ public class CodeBlocker : IDisposable
 		// property forwards to the inner writer on modern targets, but CodeBlocker also ships for
 		// netstandard2.0, where the running framework supplies IndentedTextWriter and that forwarding
 		// is not guaranteed. Setting both is cheap and makes the behaviour identical everywhere.
-		stringWriter.NewLine = newLineString;
-		IndentedTextWriter = new IndentedTextWriter(stringWriter, indentString)
+		writer.NewLine = newLineString;
+		IndentedTextWriter = new IndentedTextWriter(writer, indentString)
 		{
 			NewLine = newLineString
 		};
@@ -107,10 +166,10 @@ public class CodeBlocker : IDisposable
 	/// <returns>A new instance of <see cref="CodeBlocker"/>.</returns>
 	public static CodeBlocker Create(string indentString, string newLineString)
 	{
-#pragma warning disable CA2000 // Dispose objects before losing scope - StringWriter will be disposed by CodeBlocker when shouldDisposeStringWriter is true
-		return new(new(), indentString, newLineString)
+#pragma warning disable CA2000 // Dispose objects before losing scope - the StringWriter is disposed by CodeBlocker because shouldDisposeWriter is true
+		return new(new StringWriter(), indentString, newLineString)
 		{
-			shouldDisposeStringWriter = true
+			shouldDisposeWriter = true
 		};
 #pragma warning restore CA2000 // Dispose objects before losing scope
 	}
@@ -118,8 +177,17 @@ public class CodeBlocker : IDisposable
 	/// <summary>
 	/// Get the string representation of the code.
 	/// </summary>
-	/// <returns>The string representation of the code.</returns>
-	public override string ToString() => stringWriter.ToString();
+	/// <returns>
+	/// The code written so far when this instance is buffered — see <see cref="IsBuffered"/> — and
+	/// otherwise the type name, as <see cref="object.ToString"/> would give.
+	/// </returns>
+	/// <remarks>
+	/// A <see cref="CodeBlocker"/> over a non-buffering <see cref="TextWriter"/> (a file, a network
+	/// stream) keeps no copy of what it wrote, so there is nothing to hand back; read the generated
+	/// code from that writer instead. This returns the type name rather than throwing so that
+	/// diagnostics and debuggers, which call <see cref="ToString"/> freely, stay safe.
+	/// </remarks>
+	public override string ToString() => BufferedWriter?.ToString() ?? base.ToString() ?? nameof(CodeBlocker);
 
 	/// <summary>
 	/// Write a line of code without indentation.
@@ -172,12 +240,14 @@ public class CodeBlocker : IDisposable
 		{
 			if (disposing)
 			{
-				if (shouldDisposeStringWriter)
+				if (shouldDisposeWriter)
 				{
-					stringWriter.Dispose();
-					shouldDisposeStringWriter = false;
+					writer.Dispose();
+					shouldDisposeWriter = false;
 				}
 
+				// Disposing the IndentedTextWriter does not dispose the writer it wraps, so a
+				// caller-supplied writer survives this and stays theirs to dispose.
 				IndentedTextWriter.Dispose();
 			}
 
