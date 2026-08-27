@@ -1,8 +1,27 @@
-## v1.2.16 (patch)
+## v1.3.0 (minor)
 
-Changes since v1.2.15:
+Changes since v1.2.0:
 
+- refactor: clear the three Sonar findings on new code [patch] ([@Claude](https://github.com/Claude))
+- test: adopt main's host-terminator expectations [patch] ([@Claude](https://github.com/Claude))
+- Merge remote-tracking branch 'origin/main' into claude/extract-generalize-codegen-hjt2iy ([@Claude](https://github.com/Claude))
+- fix: guard arguments with Ensure.NotNull [patch] ([@Claude](https://github.com/Claude))
+- feat: add the C# template object model [minor] ([@Claude](https://github.com/Claude))
 - test: expect the host line terminator, not CRLF [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- feat: add scope and preprocessor-directive helpers [minor] ([@Claude](https://github.com/Claude))
+- feat: accept any TextWriter, not just StringWriter [minor] ([@Claude](https://github.com/Claude))
+- feat: make the line terminator configurable [minor] ([@Claude](https://github.com/Claude))
 - ci: make the SonarQube quality gate opt in [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
 - ci: adopt the unified dotnet workflow [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- chore: store icon.png in LFS as .gitattributes declares ([@matt-edmondson](https://github.com/matt-edmondson))
+- docs: scope build badge to the default branch ([@matt-edmondson](https://github.com/matt-edmondson))
+- docs: correct README, DESCRIPTION and TAGS metadata ([@matt-edmondson](https://github.com/matt-edmondson))
+- Stop Update SDKs failing when there is nothing to update ([@matt-edmondson](https://github.com/matt-edmondson))
+- Fix build for ktsu.Sdk 2.26.1+: migrate file headers (IDE0073), normalize line endings (IDE0055), Polyfill PrivateAssets (KTSU0007), InternalsVisibleTo for test project (KTSU0002), remove duplicate MSTest extension pins (NU1506) [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- Sync .runsettings ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .editorconfig ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .gitattributes ([@KtsuTools](https://github.com/KtsuTools))
+- chore: remove unused SourceLink package versions ([@matt-edmondson](https://github.com/matt-edmondson))
+- Remove unused package references from project files ([@matt-edmondson](https://github.com/matt-edmondson))
+- Add TAGS.md with NuGet package tags ([@matt-edmondson](https://github.com/matt-edmondson))
 
