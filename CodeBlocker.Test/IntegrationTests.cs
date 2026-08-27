@@ -39,22 +39,22 @@ public sealed class IntegrationTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "public class TestClass\r\n" +
-					   "{\r\n" +
-					   "\tpublic void Method1()\r\n" +
-					   "\t{\r\n" +
-					   "\t\tvar x = 1;\r\n" +
-					   "\t\tConsole.WriteLine(x);\r\n" +
-					   "\t}\r\n" +
-					   "\r\n" +
-					   "\tpublic void Method2()\r\n" +
-					   "\t{\r\n" +
-					   "\t\tif (true)\r\n" +
-					   "\t\t{\r\n" +
-					   "\t\t\treturn;\r\n" +
-					   "\t\t}\r\n" +
-					   "\t}\r\n" +
-					   "}\r\n";
+		string expected = "public class TestClass" + Environment.NewLine +
+					   "{" + Environment.NewLine +
+					   "\tpublic void Method1()" + Environment.NewLine +
+					   "\t{" + Environment.NewLine +
+					   "\t\tvar x = 1;" + Environment.NewLine +
+					   "\t\tConsole.WriteLine(x);" + Environment.NewLine +
+					   "\t}" + Environment.NewLine +
+					   Environment.NewLine +
+					   "\tpublic void Method2()" + Environment.NewLine +
+					   "\t{" + Environment.NewLine +
+					   "\t\tif (true)" + Environment.NewLine +
+					   "\t\t{" + Environment.NewLine +
+					   "\t\t\treturn;" + Environment.NewLine +
+					   "\t\t}" + Environment.NewLine +
+					   "\t}" + Environment.NewLine +
+					   "}" + Environment.NewLine;
 
 		Assert.AreEqual(expected, result);
 	}
@@ -85,10 +85,10 @@ public sealed class IntegrationTests
 
 		// Verify it contains the expected structure
 
-		Assert.IsTrue(result.Contains("start\r\n", StringComparison.Ordinal), "Result should contain 'start' line");
-		Assert.IsTrue(result.Contains("level 1\r\n", StringComparison.Ordinal), "Result should contain 'level 1' line");
-		Assert.IsTrue(result.Contains("level 5\r\n", StringComparison.Ordinal), "Result should contain 'level 5' line");
-		Assert.IsTrue(result.Contains("end\r\n", StringComparison.Ordinal), "Result should contain 'end' line");
+		Assert.IsTrue(result.Contains("start" + Environment.NewLine, StringComparison.Ordinal), "Result should contain 'start' line");
+		Assert.IsTrue(result.Contains("level 1" + Environment.NewLine, StringComparison.Ordinal), "Result should contain 'level 1' line");
+		Assert.IsTrue(result.Contains("level 5" + Environment.NewLine, StringComparison.Ordinal), "Result should contain 'level 5' line");
+		Assert.IsTrue(result.Contains("end" + Environment.NewLine, StringComparison.Ordinal), "Result should contain 'end' line");
 
 		// Count opening and closing braces to ensure they match
 
@@ -134,14 +134,14 @@ public sealed class IntegrationTests
 
 		// Verify structure
 
-		Assert.IsTrue(result.StartsWith("// Header comment\r\n", StringComparison.Ordinal), "Result should start with header comment");
-		Assert.IsTrue(result.Contains("namespace TestNamespace\r\n", StringComparison.Ordinal), "Result should contain namespace declaration");
-		Assert.IsTrue(result.Contains("\tusing System;\r\n", StringComparison.Ordinal), "Result should contain indented using directive");
-		Assert.IsTrue(result.Contains("\tpublic interface ITest\r\n", StringComparison.Ordinal), "Result should contain interface declaration");
-		Assert.IsTrue(result.Contains("\t\tvoid DoSomething();\r\n", StringComparison.Ordinal), "Result should contain interface method with double indentation");
-		Assert.IsTrue(result.Contains("\tpublic class Test : ITest\r\n", StringComparison.Ordinal), "Result should contain class declaration");
-		Assert.IsTrue(result.Contains("\t\tpublic void DoSomething()\r\n", StringComparison.Ordinal), "Result should contain class method with double indentation");
-		Assert.IsTrue(result.Contains("\t\t\t// Implementation\r\n", StringComparison.Ordinal), "Result should contain implementation comment with triple indentation");
+		Assert.IsTrue(result.StartsWith("// Header comment" + Environment.NewLine, StringComparison.Ordinal), "Result should start with header comment");
+		Assert.IsTrue(result.Contains("namespace TestNamespace" + Environment.NewLine, StringComparison.Ordinal), "Result should contain namespace declaration");
+		Assert.IsTrue(result.Contains("\tusing System;" + Environment.NewLine, StringComparison.Ordinal), "Result should contain indented using directive");
+		Assert.IsTrue(result.Contains("\tpublic interface ITest" + Environment.NewLine, StringComparison.Ordinal), "Result should contain interface declaration");
+		Assert.IsTrue(result.Contains("\t\tvoid DoSomething();" + Environment.NewLine, StringComparison.Ordinal), "Result should contain interface method with double indentation");
+		Assert.IsTrue(result.Contains("\tpublic class Test : ITest" + Environment.NewLine, StringComparison.Ordinal), "Result should contain class declaration");
+		Assert.IsTrue(result.Contains("\t\tpublic void DoSomething()" + Environment.NewLine, StringComparison.Ordinal), "Result should contain class method with double indentation");
+		Assert.IsTrue(result.Contains("\t\t\t// Implementation" + Environment.NewLine, StringComparison.Ordinal), "Result should contain implementation comment with triple indentation");
 	}
 
 	[TestMethod]
@@ -166,7 +166,7 @@ public sealed class IntegrationTests
 		// Assert
 
 		string result = codeBlocker.ToString();
-		string expected = "before\r\n{\r\n}\r\nafter\r\n";
+		string expected = "before" + Environment.NewLine + "{" + Environment.NewLine + "}" + Environment.NewLine + "after" + Environment.NewLine;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -197,8 +197,8 @@ public sealed class IntegrationTests
 		string result1 = codeBlocker1.ToString();
 		string result2 = codeBlocker2.ToString();
 
-		string expected1 = "codeBlocker1 content\r\n{\r\n\tinside scope1\r\n}\r\n";
-		string expected2 = "codeBlocker2 content\r\n{\r\n\tinside scope2\r\n}\r\n";
+		string expected1 = "codeBlocker1 content" + Environment.NewLine + "{" + Environment.NewLine + "\tinside scope1" + Environment.NewLine + "}" + Environment.NewLine;
+		string expected2 = "codeBlocker2 content" + Environment.NewLine + "{" + Environment.NewLine + "\tinside scope2" + Environment.NewLine + "}" + Environment.NewLine;
 
 		Assert.AreEqual(expected1, result1);
 		Assert.AreEqual(expected2, result2);
@@ -254,13 +254,13 @@ public sealed class IntegrationTests
 
 		// Verify HTML uses 2-space indentation
 
-		Assert.IsTrue(htmlResult.Contains("  <head>\r\n", StringComparison.Ordinal), "HTML result should contain head tag with 2-space indentation");
-		Assert.IsTrue(htmlResult.Contains("    <title>Test Page</title>\r\n", StringComparison.Ordinal), "HTML result should contain title tag with 4-space indentation");
+		Assert.IsTrue(htmlResult.Contains("  <head>" + Environment.NewLine, StringComparison.Ordinal), "HTML result should contain head tag with 2-space indentation");
+		Assert.IsTrue(htmlResult.Contains("    <title>Test Page</title>" + Environment.NewLine, StringComparison.Ordinal), "HTML result should contain title tag with 4-space indentation");
 
 		// Verify JS uses tab indentation
 
-		Assert.IsTrue(jsResult.Contains("\tconst content = document.getElementById('content');\r\n", StringComparison.Ordinal), "JS result should contain const declaration with tab indentation");
-		Assert.IsTrue(jsResult.Contains("\t\tcontent.addEventListener('click', handleClick);\r\n", StringComparison.Ordinal), "JS result should contain addEventListener with double tab indentation");
+		Assert.IsTrue(jsResult.Contains("\tconst content = document.getElementById('content');" + Environment.NewLine, StringComparison.Ordinal), "JS result should contain const declaration with tab indentation");
+		Assert.IsTrue(jsResult.Contains("\t\tcontent.addEventListener('click', handleClick);" + Environment.NewLine, StringComparison.Ordinal), "JS result should contain addEventListener with double tab indentation");
 	}
 
 	[TestMethod]
@@ -296,15 +296,15 @@ public sealed class IntegrationTests
 
 		string result = codeBlocker.ToString();
 		string expected =
-			"public class MyClass : BaseClass\r\n" +
-			"{\r\n" +
-			"\tprivate readonly string _field;\r\n" +
-			"\r\n" +
-			"\tpublic MyClass(string field)\r\n" +
-			"\t{\r\n" +
-			"\t\t_field = field ?? throw new ArgumentNullException(nameof(field));\r\n" +
-			"\t}\r\n" +
-			"}\r\n";
+			"public class MyClass : BaseClass" + Environment.NewLine +
+			"{" + Environment.NewLine +
+			"\tprivate readonly string _field;" + Environment.NewLine +
+			Environment.NewLine +
+			"\tpublic MyClass(string field)" + Environment.NewLine +
+			"\t{" + Environment.NewLine +
+			"\t\t_field = field ?? throw new ArgumentNullException(nameof(field));" + Environment.NewLine +
+			"\t}" + Environment.NewLine +
+			"}" + Environment.NewLine;
 
 		Assert.AreEqual(expected, result);
 	}
@@ -355,11 +355,11 @@ public sealed class IntegrationTests
 
 		// Verify structure exists
 
-		Assert.IsTrue(result.Contains("namespace LargeTest\r\n", StringComparison.Ordinal), "Result should contain namespace declaration");
-		Assert.IsTrue(result.Contains("public class Class0\r\n", StringComparison.Ordinal), "Result should contain first class declaration");
-		Assert.IsTrue(result.Contains($"public class Class{classCount - 1}\r\n", StringComparison.Ordinal), "Result should contain last class declaration");
-		Assert.IsTrue(result.Contains("public void Method0()\r\n", StringComparison.Ordinal), "Result should contain first method declaration");
-		Assert.IsTrue(result.Contains($"public void Method{methodsPerClass - 1}()\r\n", StringComparison.Ordinal), "Result should contain last method declaration");
+		Assert.IsTrue(result.Contains("namespace LargeTest" + Environment.NewLine, StringComparison.Ordinal), "Result should contain namespace declaration");
+		Assert.IsTrue(result.Contains("public class Class0" + Environment.NewLine, StringComparison.Ordinal), "Result should contain first class declaration");
+		Assert.IsTrue(result.Contains($"public class Class{classCount - 1}{Environment.NewLine}", StringComparison.Ordinal), "Result should contain last class declaration");
+		Assert.IsTrue(result.Contains("public void Method0()" + Environment.NewLine, StringComparison.Ordinal), "Result should contain first method declaration");
+		Assert.IsTrue(result.Contains($"public void Method{methodsPerClass - 1}(){Environment.NewLine}", StringComparison.Ordinal), "Result should contain last method declaration");
 
 		// Verify performance (should complete in reasonable time)
 
@@ -406,11 +406,11 @@ public sealed class IntegrationTests
 
 		// Verify both CodeBlockers wrote to the same StringWriter
 
-		Assert.IsTrue(result.Contains("// First CodeBlocker\r\n", StringComparison.Ordinal), "Result should contain first CodeBlocker comment");
-		Assert.IsTrue(result.Contains("\tcontent from first\r\n", StringComparison.Ordinal), "Result should contain first CodeBlocker content with tab indent");
+		Assert.IsTrue(result.Contains("// First CodeBlocker" + Environment.NewLine, StringComparison.Ordinal), "Result should contain first CodeBlocker comment");
+		Assert.IsTrue(result.Contains("\tcontent from first" + Environment.NewLine, StringComparison.Ordinal), "Result should contain first CodeBlocker content with tab indent");
 
-		Assert.IsTrue(result.Contains("// Second CodeBlocker with different indent\r\n", StringComparison.Ordinal), "Result should contain second CodeBlocker comment");
-		Assert.IsTrue(result.Contains("  content from second\r\n", StringComparison.Ordinal), "Result should contain second CodeBlocker content with 2-space indent");
+		Assert.IsTrue(result.Contains("// Second CodeBlocker with different indent" + Environment.NewLine, StringComparison.Ordinal), "Result should contain second CodeBlocker comment");
+		Assert.IsTrue(result.Contains("  content from second" + Environment.NewLine, StringComparison.Ordinal), "Result should contain second CodeBlocker content with 2-space indent");
 
 	}
 
@@ -446,8 +446,8 @@ public sealed class IntegrationTests
 		}
 
 		string result = codeBlocker.ToString();
-		Assert.IsTrue(result.Contains("recovered content\r\n", StringComparison.Ordinal), "Result should contain recovered content after error");
-		Assert.IsTrue(result.Contains("scope content\r\n", StringComparison.Ordinal), "Result should contain scope content after recovery");
+		Assert.IsTrue(result.Contains("recovered content" + Environment.NewLine, StringComparison.Ordinal), "Result should contain recovered content after error");
+		Assert.IsTrue(result.Contains("scope content" + Environment.NewLine, StringComparison.Ordinal), "Result should contain scope content after recovery");
 	}
 
 	[TestMethod]
@@ -471,9 +471,9 @@ public sealed class IntegrationTests
 
 		string result = codeBlocker.ToString();
 
-		Assert.IsTrue(result.Contains("// Unicode test: αβγδε 中文 🚀\r\n", StringComparison.Ordinal), "Result should contain Unicode comment with Greek, Chinese, and emoji characters");
-		Assert.IsTrue(result.Contains("→→string text = \"Hello 世界!\";\r\n", StringComparison.Ordinal), "Result should contain string with Chinese characters and Unicode arrow indent");
-		Assert.IsTrue(result.Contains("→→char symbol = '€';\r\n", StringComparison.Ordinal), "Result should contain Euro symbol with Unicode arrow indent");
+		Assert.IsTrue(result.Contains("// Unicode test: αβγδε 中文 🚀" + Environment.NewLine, StringComparison.Ordinal), "Result should contain Unicode comment with Greek, Chinese, and emoji characters");
+		Assert.IsTrue(result.Contains("→→string text = \"Hello 世界!\";" + Environment.NewLine, StringComparison.Ordinal), "Result should contain string with Chinese characters and Unicode arrow indent");
+		Assert.IsTrue(result.Contains("→→char symbol = '€';" + Environment.NewLine, StringComparison.Ordinal), "Result should contain Euro symbol with Unicode arrow indent");
 		Assert.IsTrue(result.Contains("→→// Special chars: \t\r\n\\\"", StringComparison.Ordinal), "Result should contain special characters with Unicode arrow indent");
 	}
 }
