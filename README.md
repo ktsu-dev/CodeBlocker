@@ -18,6 +18,7 @@ CodeBlocker is a specialized utility built on top of `IndentedTextWriter` that s
 
 - **Automatic Indentation**: Properly manages indentation levels as you create nested code blocks
 - **Configurable Indentation**: Support for custom indent strings (tabs, spaces, or any custom pattern)
+- **Configurable Line Endings**: Pin the line terminator so the same calls produce byte-identical output on every platform
 - **Scope Management**: Uses C# `using` statements for clean, readable scope creation with automatic brace handling powered by `ktsu.ScopedAction`, with optional trailing semicolons via `ScopeWithTrailingSemicolon`
 - **Flexible API**: Write individual lines or entire code blocks with proper formatting
 - **Standard Output Support**: Works with StringWriter for flexible output handling
@@ -151,6 +152,45 @@ using (new Scope(scopeCodeBlocker))
 }
 ```
 
+### Line Endings
+
+`CodeBlocker` writes through `IndentedTextWriter`, which terminates lines with `Environment.NewLine`. That makes output depend on the machine that produced it — the same calls give you CRLF on Windows and LF everywhere else.
+
+If your generated code is committed to a repository, or compared against a golden file, pin the terminator instead:
+
+```csharp
+namespace CodeBlockerExample;
+
+using ktsu.CodeBlocker;
+
+internal class DeterministicExample
+{
+	public static string GenerateCode()
+	{
+		// Byte-identical on every platform.
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		codeBlocker.WriteLine("public class Example");
+		using (new Scope(codeBlocker))
+		{
+			codeBlocker.WriteLine("public int Value { get; set; }");
+		}
+
+		return codeBlocker.ToString();
+	}
+}
+```
+
+The `NewLines` class names the usual choices:
+
+| Name | Value | Notes |
+|------|-------|-------|
+| `NewLines.Lf` | `"\n"` | The conventional choice for reproducible output |
+| `NewLines.CrLf` | `"\r\n"` | Use when the target repository stores `.cs` files with CRLF |
+| `NewLines.Host` | `Environment.NewLine` | The default, and the one that varies by platform |
+
+Any other string works too — the terminator is written verbatim.
+
 ### Advanced Usage
 
 ```csharp
@@ -211,6 +251,7 @@ The main class for building indented code blocks.
 |------|-------------|
 | `CodeBlocker(StringWriter stringWriter)` | Creates a new CodeBlocker with the specified StringWriter using tab indentation |
 | `CodeBlocker(StringWriter stringWriter, string indentString)` | Creates a new CodeBlocker with the specified StringWriter and custom indent string |
+| `CodeBlocker(StringWriter stringWriter, string indentString, string newLineString)` | As above, and pins the line terminator written at the end of every line |
 
 #### Properties
 
@@ -218,6 +259,7 @@ The main class for building indented code blocks.
 |------|------|-------------|
 | `CurrentIndent` | `int` | Gets or sets the current indentation level |
 | `IndentString` | `string` | Gets the current indent string being used (e.g., "\t", "  ", "    ") |
+| `NewLineString` | `string` | Gets the line terminator written at the end of every line |
 
 #### Methods
 
@@ -232,6 +274,7 @@ The main class for building indented code blocks.
 | `ToString()` | `string` | Returns the generated code as a string |
 | `Create()` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance with tab indentation |
 | `Create(string indentString)` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance with custom indentation |
+| `Create(string indentString, string newLineString)` | `CodeBlocker` | Static factory method to create a new CodeBlocker instance with custom indentation and a pinned line terminator |
 | `Dispose()` | `void` | Disposes of the CodeBlocker and underlying resources |
 
 ### `Scope` Class

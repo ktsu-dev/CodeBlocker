@@ -13,7 +13,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act - Simulate generating a class with methods
 
@@ -64,7 +64,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		const int nestingLevels = 5;
 
 		// Act
@@ -102,7 +102,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -149,7 +149,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -175,8 +175,8 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker1 = CodeBlocker.Create();
-		using CodeBlocker codeBlocker2 = CodeBlocker.Create();
+		using CodeBlocker codeBlocker1 = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker2 = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -210,9 +210,9 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker htmlBlocker = CodeBlocker.Create("  "); // 2 spaces for HTML
+		using CodeBlocker htmlBlocker = TestCodeBlocker.CreateCrLf("  "); // 2 spaces for HTML
 
-		using CodeBlocker jsBlocker = CodeBlocker.Create("\t"); // Tabs for JS
+		using CodeBlocker jsBlocker = TestCodeBlocker.CreateCrLf("\t"); // Tabs for JS
 
 		// Act - Generate HTML structure
 
@@ -268,7 +268,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act - Mix Write and WriteLine operations
 
@@ -314,7 +314,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		const int classCount = 100;
 		const int methodsPerClass = 10;
 
@@ -386,14 +386,14 @@ public sealed class IntegrationTests
 
 		// Act
 
-		using (CodeBlocker codeBlocker1 = new(sharedWriter))
+		using (CodeBlocker codeBlocker1 = new(sharedWriter, CodeBlocker.DefaultIndentString, NewLines.CrLf))
 		{
 			codeBlocker1.WriteLine("// First CodeBlocker");
 			using Scope scope1 = new(codeBlocker1);
 			codeBlocker1.WriteLine("content from first");
 		}
 
-		using (CodeBlocker codeBlocker2 = new(sharedWriter, "  "))
+		using (CodeBlocker codeBlocker2 = new(sharedWriter, "  ", NewLines.CrLf))
 		{
 			codeBlocker2.WriteLine("// Second CodeBlocker with different indent");
 			using Scope scope2 = new(codeBlocker2);
@@ -419,7 +419,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act & Assert - Test error recovery
 #pragma warning disable CA1031 // Do not catch general exception types - This test specifically needs to catch any potential exception
@@ -455,7 +455,7 @@ public sealed class IntegrationTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create("→→"); // Unicode arrows as indent
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf("→→"); // Unicode arrows as indent
 
 		// Act
 

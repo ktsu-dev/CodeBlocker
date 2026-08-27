@@ -13,7 +13,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		int initialIndent = codeBlocker.CurrentIndent;
 
 		// Act
@@ -32,7 +32,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		int initialIndent = codeBlocker.CurrentIndent;
 		ScopeWithTrailingSemicolon scope = new(codeBlocker);
 
@@ -52,7 +52,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -73,7 +73,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -99,7 +99,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		ScopeWithTrailingSemicolon scope = new(codeBlocker);
 
 		// Act & Assert
@@ -113,7 +113,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act
 
@@ -136,7 +136,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 
 		const string customIndent = "  "; // Two spaces
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(customIndent);
 
 		// Act
 
@@ -166,7 +166,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		CodeBlocker codeBlocker = CodeBlocker.Create();
+		CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 		codeBlocker.Dispose();
 
 		// Act & Assert - Should throw when trying to use disposed CodeBlocker
@@ -179,7 +179,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
 
 		// Act - Mix Scope and ScopeWithTrailingSemicolon
 
@@ -224,7 +224,7 @@ public sealed class ScopeWithTrailingSemicolonTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = CodeBlocker.Create(string.Empty);
+		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(string.Empty);
 
 		// Act
 
