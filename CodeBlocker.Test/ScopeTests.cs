@@ -13,7 +13,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		int initialIndent = codeBlocker.CurrentIndent;
 
 		// Act
@@ -32,7 +32,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		int initialIndent = codeBlocker.CurrentIndent;
 		Scope scope = new(codeBlocker);
 
@@ -52,7 +52,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -73,7 +73,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -99,7 +99,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		Scope scope = new(codeBlocker);
 
 		// Act & Assert
@@ -114,7 +114,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -135,7 +135,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -163,7 +163,7 @@ public sealed class ScopeTests
 
 		const string customIndent = "  "; // Two spaces
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(customIndent);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
 
 		// Act
 
@@ -193,7 +193,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		CodeBlocker codeBlocker = CodeBlocker.Create();
 		codeBlocker.Dispose();
 
 		// Act & Assert - Should throw when trying to use disposed CodeBlocker
@@ -206,7 +206,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		const int nestingLevels = 50;
 		List<Scope> scopes = [];
 
@@ -244,7 +244,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -275,7 +275,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -303,7 +303,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -333,7 +333,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(string.Empty);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(string.Empty);
 
 		// Act
 
@@ -354,7 +354,7 @@ public sealed class ScopeTests
 	{
 		// Arrange
 
-		CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act - Dispose the CodeBlocker while scope is still active
 

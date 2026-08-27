@@ -13,7 +13,7 @@ public sealed class CodeBlockerTests
 	{
 		// Act
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Assert
 
@@ -26,7 +26,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -42,7 +42,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -59,7 +59,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -76,7 +76,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -94,7 +94,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -116,7 +116,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 
@@ -129,7 +129,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert
 
@@ -147,7 +147,7 @@ public sealed class CodeBlockerTests
 
 		// Act
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(customIndent);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
 		codeBlocker.Indent();
 		codeBlocker.WriteLine("test line");
 		string result = codeBlocker.ToString();
@@ -168,7 +168,7 @@ public sealed class CodeBlockerTests
 
 		// Act
 
-		using CodeBlocker codeBlocker = new(stringWriter, customIndent, NewLines.CrLf);
+		using CodeBlocker codeBlocker = new(stringWriter, customIndent);
 		codeBlocker.Indent();
 		codeBlocker.WriteLine("indented content");
 		string result = codeBlocker.ToString();
@@ -184,7 +184,7 @@ public sealed class CodeBlockerTests
 	{
 		// Act
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Assert
 
@@ -198,7 +198,7 @@ public sealed class CodeBlockerTests
 
 		const string customIndent = ">>"; // Custom string
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(customIndent);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(customIndent);
 
 		// Act
 
@@ -221,7 +221,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -240,7 +240,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -258,7 +258,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -276,7 +276,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -295,7 +295,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		codeBlocker.Indent();
 		codeBlocker.Indent();
 
@@ -332,7 +332,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange & Act
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(null!);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(null!);
 		codeBlocker.Indent();
 		codeBlocker.WriteLine("test");
 		string result = codeBlocker.ToString();
@@ -348,7 +348,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -365,7 +365,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -382,7 +382,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act & Assert - Should not throw, but may not go below 0
 
@@ -399,7 +399,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(); // This should manage StringWriter disposal
+		CodeBlocker codeBlocker = CodeBlocker.Create(); // This should manage StringWriter disposal
 
 		// Act & Assert - Should not throw
 
@@ -413,7 +413,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 
 		// Act
 
@@ -434,7 +434,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		const int maxDepth = 100;
 
 		// Act
@@ -458,7 +458,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf();
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
 		string largeString = new('x', 10000);
 
 		// Act
@@ -477,7 +477,7 @@ public sealed class CodeBlockerTests
 	{
 		// Arrange & Act
 
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(string.Empty);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(string.Empty);
 		codeBlocker.Indent();
 		codeBlocker.WriteLine("test");
 		string result = codeBlocker.ToString();
@@ -495,7 +495,7 @@ public sealed class CodeBlockerTests
 		// Arrange
 
 		const string longIndent = "====================================";
-		using CodeBlocker codeBlocker = TestCodeBlocker.CreateCrLf(longIndent);
+		using CodeBlocker codeBlocker = CodeBlocker.Create(longIndent);
 
 		// Act
 
