@@ -161,25 +161,22 @@ public class DocComment
 		void Check(Collection<DocTag> tags, HashSet<string> declared, string tagName, string what)
 		{
 			HashSet<string> documented = [];
-			foreach (DocTag tag in tags)
+			foreach (string name in tags.Select(tag => tag.Name))
 			{
-				if (!documented.Add(tag.Name))
+				if (!documented.Add(name))
 				{
-					issues.Add($"<{tagName} name=\"{tag.Name}\"> is documented more than once.");
+					issues.Add($"<{tagName} name=\"{name}\"> is documented more than once.");
 				}
 
-				if (!declared.Contains(tag.Name))
+				if (!declared.Contains(name))
 				{
-					issues.Add($"<{tagName} name=\"{tag.Name}\"> does not match any declared {what}.");
+					issues.Add($"<{tagName} name=\"{name}\"> does not match any declared {what}.");
 				}
 			}
 
-			foreach (string name in declared)
+			foreach (string name in declared.Where(name => !documented.Contains(name)))
 			{
-				if (!documented.Contains(name))
-				{
-					issues.Add($"The {what} '{name}' has no <{tagName}> entry.");
-				}
+				issues.Add($"The {what} '{name}' has no <{tagName}> entry.");
 			}
 		}
 	}

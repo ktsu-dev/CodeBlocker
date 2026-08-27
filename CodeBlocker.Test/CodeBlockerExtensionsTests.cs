@@ -94,11 +94,16 @@ public sealed class CodeBlockerExtensionsTests
 	[TestMethod]
 	public void NoUsingsWritesNothingIncludingTheBlankLine()
 	{
-		using CodeBlocker codeBlocker = Create();
+		// Both overloads, because a generator calls this unconditionally and either spelling has to
+		// come out empty rather than leaving a stray blank line at the top of the file.
+		using CodeBlocker noArguments = Create();
+		using CodeBlocker emptySequence = Create();
 
-		codeBlocker.WriteUsings([]);
+		noArguments.WriteUsings();
+		emptySequence.WriteUsings(Enumerable.Empty<string>());
 
-		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+		Assert.AreEqual(string.Empty, noArguments.ToString());
+		Assert.AreEqual(string.Empty, emptySequence.ToString());
 	}
 
 	[TestMethod]
