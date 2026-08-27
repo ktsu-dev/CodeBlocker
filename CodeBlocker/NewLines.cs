@@ -21,8 +21,8 @@ public static class NewLines
 
 	/// <summary>
 	/// The host operating system's line terminator. This is what a <see cref="System.IO.TextWriter"/>
-	/// uses by default, and therefore what <see cref="CodeBlocker"/> falls back to when no line
-	/// terminator is specified — which makes the output depend on where it was produced.
+	/// uses by default; <see cref="CodeBlocker"/> deliberately does not, because it makes output
+	/// depend on where it was produced. Pass it explicitly when that is what you want.
 	/// </summary>
 	public static string Host => System.Environment.NewLine;
 }

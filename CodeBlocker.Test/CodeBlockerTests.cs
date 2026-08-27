@@ -51,7 +51,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual("test line" + Environment.NewLine, result);
+		Assert.AreEqual("test line" + CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -68,7 +68,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual(Environment.NewLine, result);
+		Assert.AreEqual(CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -86,7 +86,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual("\tindented line" + Environment.NewLine, result);
+		Assert.AreEqual("\tindented line" + CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -107,7 +107,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		string expected = "line 1" + Environment.NewLine + "\tline 2 indented" + Environment.NewLine + "line 3" + Environment.NewLine;
+		string expected = "line 1" + CodeBlocker.DefaultNewLineString + "\tline 2 indented" + CodeBlocker.DefaultNewLineString + "line 3" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -154,7 +154,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual("  test line" + Environment.NewLine, result);
+		Assert.AreEqual("  test line" + CodeBlocker.DefaultNewLineString, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
 
@@ -175,7 +175,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual("    indented content" + Environment.NewLine, result);
+		Assert.AreEqual("    indented content" + CodeBlocker.DefaultNewLineString, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
 
@@ -211,7 +211,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		string expected = "level 0" + Environment.NewLine + ">>level 1" + Environment.NewLine + ">>>>level 2" + Environment.NewLine;
+		string expected = "level 0" + CodeBlocker.DefaultNewLineString + ">>level 1" + CodeBlocker.DefaultNewLineString + ">>>>level 2" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 		Assert.AreEqual(customIndent, codeBlocker.IndentString);
 	}
@@ -232,7 +232,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		Assert.AreEqual("\t" + Environment.NewLine, result);
+		Assert.AreEqual("\t" + CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -287,7 +287,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(3, codeBlocker.CurrentIndent);
-		Assert.AreEqual("\t\t\ttest line" + Environment.NewLine, result);
+		Assert.AreEqual("\t\t\ttest line" + CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -308,7 +308,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(0, codeBlocker.CurrentIndent);
-		Assert.AreEqual("no indent" + Environment.NewLine, result);
+		Assert.AreEqual("no indent" + CodeBlocker.DefaultNewLineString, result);
 	}
 
 	[TestMethod]
@@ -340,7 +340,7 @@ public sealed class CodeBlockerTests
 		// Assert - Should work with null indent string (treated as default)
 
 		Assert.IsNotNull(result);
-		Assert.IsTrue(result.Contains("test" + Environment.NewLine, StringComparison.Ordinal), "Result should contain test line with a line terminator");
+		Assert.IsTrue(result.Contains("test" + CodeBlocker.DefaultNewLineString, StringComparison.Ordinal), "Result should contain test line with a line terminator");
 	}
 
 	[TestMethod]
@@ -425,7 +425,7 @@ public sealed class CodeBlockerTests
 
 		// Assert
 
-		string expected = "start middle end" + Environment.NewLine + "new line" + Environment.NewLine;
+		string expected = "start middle end" + CodeBlocker.DefaultNewLineString + "new line" + CodeBlocker.DefaultNewLineString;
 		Assert.AreEqual(expected, result);
 	}
 
@@ -450,7 +450,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(maxDepth, codeBlocker.CurrentIndent);
-		Assert.IsTrue(result.StartsWith(new string('\t', maxDepth) + "deeply nested" + Environment.NewLine, StringComparison.Ordinal), "Result should start with deeply nested content prefixed by correct number of tabs");
+		Assert.IsTrue(result.StartsWith(new string('\t', maxDepth) + "deeply nested" + CodeBlocker.DefaultNewLineString, StringComparison.Ordinal), "Result should start with deeply nested content prefixed by correct number of tabs");
 	}
 
 	[TestMethod]
@@ -469,7 +469,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.IsTrue(result.Contains(largeString, StringComparison.Ordinal), "Result should contain the large string content");
-		Assert.IsTrue(result.EndsWith(Environment.NewLine, StringComparison.Ordinal), "Result should end with a line terminator");
+		Assert.IsTrue(result.EndsWith(CodeBlocker.DefaultNewLineString, StringComparison.Ordinal), "Result should end with a line terminator");
 	}
 
 	[TestMethod]
@@ -485,7 +485,7 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(string.Empty, codeBlocker.IndentString);
-		Assert.AreEqual("test" + Environment.NewLine, result); // No indentation with empty string
+		Assert.AreEqual("test" + CodeBlocker.DefaultNewLineString, result); // No indentation with empty string
 
 	}
 
@@ -506,6 +506,6 @@ public sealed class CodeBlockerTests
 		// Assert
 
 		Assert.AreEqual(longIndent, codeBlocker.IndentString);
-		Assert.AreEqual(longIndent + "test" + Environment.NewLine, result);
+		Assert.AreEqual(longIndent + "test" + CodeBlocker.DefaultNewLineString, result);
 	}
 }

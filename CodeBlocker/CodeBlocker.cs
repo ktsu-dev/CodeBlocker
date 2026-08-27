@@ -13,6 +13,18 @@ public class CodeBlocker : IDisposable
 	/// <summary>The indent string used when none is specified: a single tab.</summary>
 	public const string DefaultIndentString = "\t";
 
+	/// <summary>
+	/// The line terminator used when none is specified: a line feed.
+	/// </summary>
+	/// <remarks>
+	/// LF rather than the host's terminator, so the same calls produce the same bytes wherever they
+	/// run. That is what generated code almost always needs: it gets written to a file, committed,
+	/// diffed, or compared against a golden file, and every one of those wants reproducibility more
+	/// than it wants the local convention. Pass <see cref="NewLines.Host"/> explicitly for the old
+	/// behaviour.
+	/// </remarks>
+	public const string DefaultNewLineString = NewLines.Lf;
+
 	private readonly TextWriter writer;
 
 	private bool disposedValue;
@@ -29,10 +41,8 @@ public class CodeBlocker : IDisposable
 	/// Get the line terminator written at the end of every line.
 	/// </summary>
 	/// <remarks>
-	/// Defaults to <see cref="NewLines.Host"/>, which makes output depend on the operating system it
-	/// was produced on. Generators whose output is committed to a repository should pass an explicit
-	/// terminator — <see cref="NewLines.Lf"/> or <see cref="NewLines.CrLf"/> — so the same input
-	/// always produces the same bytes.
+	/// Defaults to <see cref="DefaultNewLineString"/>. Pass <see cref="NewLines.Host"/> to follow the
+	/// operating system's convention instead, at the cost of output that differs by platform.
 	/// </remarks>
 	public string NewLineString { get; }
 
@@ -60,7 +70,7 @@ public class CodeBlocker : IDisposable
 	/// </summary>
 	/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
 	public CodeBlocker(StringWriter stringWriter)
-		: this((TextWriter)stringWriter, DefaultIndentString, NewLines.Host)
+		: this((TextWriter)stringWriter, DefaultIndentString, DefaultNewLineString)
 	{
 	}
 
@@ -70,7 +80,7 @@ public class CodeBlocker : IDisposable
 	/// <param name="stringWriter">The <see cref="StringWriter"/> to write to.</param>
 	/// <param name="indentString">The string to use for indentation.</param>
 	public CodeBlocker(StringWriter stringWriter, string indentString)
-		: this((TextWriter)stringWriter, indentString, NewLines.Host)
+		: this((TextWriter)stringWriter, indentString, DefaultNewLineString)
 	{
 	}
 
@@ -81,7 +91,7 @@ public class CodeBlocker : IDisposable
 	/// <param name="indentString">The string to use for indentation.</param>
 	/// <param name="newLineString">
 	/// The line terminator to write at the end of every line. <see langword="null"/> selects
-	/// <see cref="NewLines.Host"/>.
+	/// <see cref="DefaultNewLineString"/>.
 	/// </param>
 	public CodeBlocker(StringWriter stringWriter, string indentString, string newLineString)
 		: this((TextWriter)stringWriter, indentString, newLineString)
@@ -97,7 +107,7 @@ public class CodeBlocker : IDisposable
 	/// <see cref="StringWriter"/> that <see cref="Create()"/> makes for itself is disposed here.
 	/// </remarks>
 	public CodeBlocker(TextWriter writer)
-		: this(writer, DefaultIndentString, NewLines.Host)
+		: this(writer, DefaultIndentString, DefaultNewLineString)
 	{
 	}
 
@@ -108,7 +118,7 @@ public class CodeBlocker : IDisposable
 	/// <param name="writer">The <see cref="TextWriter"/> to write to.</param>
 	/// <param name="indentString">The string to use for indentation.</param>
 	public CodeBlocker(TextWriter writer, string indentString)
-		: this(writer, indentString, NewLines.Host)
+		: this(writer, indentString, DefaultNewLineString)
 	{
 	}
 
@@ -120,7 +130,7 @@ public class CodeBlocker : IDisposable
 	/// <param name="indentString">The string to use for indentation.</param>
 	/// <param name="newLineString">
 	/// The line terminator to write at the end of every line. <see langword="null"/> selects
-	/// <see cref="NewLines.Host"/>.
+	/// <see cref="DefaultNewLineString"/>.
 	/// </param>
 	/// <exception cref="ArgumentNullException"><paramref name="writer"/> is <see langword="null"/>.</exception>
 	public CodeBlocker(TextWriter writer, string indentString, string newLineString)
@@ -129,7 +139,7 @@ public class CodeBlocker : IDisposable
 
 		// indentString is deliberately not null-checked: a null indent has always meant "no
 		// indentation" here, and CreateWithNullIndentStringShouldWork pins that behaviour.
-		newLineString ??= NewLines.Host;
+		newLineString ??= DefaultNewLineString;
 
 		this.writer = writer;
 		IndentString = indentString;
@@ -150,14 +160,14 @@ public class CodeBlocker : IDisposable
 	/// Create a new instance of <see cref="CodeBlocker"/>.
 	/// </summary>
 	/// <returns>A new instance of <see cref="CodeBlocker"/>.</returns>
-	public static CodeBlocker Create() => Create(DefaultIndentString, NewLines.Host);
+	public static CodeBlocker Create() => Create(DefaultIndentString, DefaultNewLineString);
 
 	/// <summary>
 	/// Create a new instance of <see cref="CodeBlocker"/> with a custom indent string.
 	/// </summary>
 	/// <param name="indentString">The string to use for indentation.</param>
 	/// <returns>A new instance of <see cref="CodeBlocker"/>.</returns>
-	public static CodeBlocker Create(string indentString) => Create(indentString, NewLines.Host);
+	public static CodeBlocker Create(string indentString) => Create(indentString, DefaultNewLineString);
 
 	/// <summary>
 	/// Create a new instance of <see cref="CodeBlocker"/> with a custom indent string and line terminator.
