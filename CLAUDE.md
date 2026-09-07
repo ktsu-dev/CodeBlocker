@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -41,6 +41,11 @@ The opt-in lives in `.sonarlint/sonar-local.props` (the analyzer package) and
 `.sonarlint/sonar-local.globalconfig` (rule severities — it raises the rules CI reports that the
 analyzer package ships disabled). Nothing imports these automatically, so normal builds, the CI
 pipeline, and packaging are unaffected.
+
+On current `main` the run is clean apart from five `S2699` warnings (test methods that assert
+nothing) in `CodeBlocker.Test`. It found and named `S4144` on `ScopeTests.cs` — two test methods with
+identical bodies, one of which did not test what its name claimed — which is the kind of finding the
+setup exists for.
 
 **Known gap:** SonarCloud reported one new issue on PR #87 that this configuration does not
 reproduce, and sonarcloud.io is not reachable from the agent sandbox to identify it. The rule

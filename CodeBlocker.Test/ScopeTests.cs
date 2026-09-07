@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2026 ktsu-dev contributors
+﻿// Copyright (c) 2023-2026 ktsu-dev contributors
 
 namespace CodeBlocker.Tests;
 
@@ -352,16 +352,19 @@ public sealed class ScopeTests
 	[TestMethod]
 	public void ScopeAfterManualDisposeOfCodeBlockerShouldThrowException()
 	{
-		// Arrange
+		// Arrange - open a scope, so there is one still active when the CodeBlocker goes away
 
 		CodeBlocker codeBlocker = CodeBlocker.Create();
+#pragma warning disable CA2000 // Dispose objects before losing scope - disposing the scope is the act under test, and it throws, so a using block would let the exception escape the assert.
+		Scope scope = new(codeBlocker);
+#pragma warning restore CA2000
 
-		// Act - Dispose the CodeBlocker while scope is still active
+		// Act - Dispose the CodeBlocker while the scope is still active
 
 		codeBlocker.Dispose();
 
-		// Assert - Creating scope with disposed CodeBlocker should throw
+		// Assert - Closing the scope writes its brace to the disposed writer
 
-		Assert.ThrowsExactly<ObjectDisposedException>(() => new Scope(codeBlocker));
+		Assert.ThrowsExactly<ObjectDisposedException>(scope.Dispose);
 	}
 }
