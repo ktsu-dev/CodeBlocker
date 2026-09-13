@@ -136,6 +136,39 @@ public sealed class ScopesTests
 	}
 
 	[TestMethod]
+	public void PragmaScopeWithAnEmptyStringIsANoOp()
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		using (new PragmaScope(codeBlocker, ""))
+		{
+			codeBlocker.WriteLine("public int Value;");
+		}
+
+		Assert.AreEqual("public int Value;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void PragmaScopeWithAnEmptyWarningSequenceDoesNotAffectAnOuterScope()
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		using (new PragmaScope(codeBlocker, "CS1591"))
+		{
+			using (new PragmaScope(codeBlocker, []))
+			{
+				codeBlocker.WriteLine("public int X;");
+			}
+
+			codeBlocker.WriteLine("public int Y;");
+		}
+
+		Assert.AreEqual(
+			"#pragma warning disable CS1591\npublic int X;\npublic int Y;\n#pragma warning restore CS1591\n",
+			codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void ScopesOfMixedKindsNestCorrectly()
 	{
 		using CodeBlocker codeBlocker = Create();
