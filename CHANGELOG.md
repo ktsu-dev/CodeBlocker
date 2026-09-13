@@ -1,6 +1,8 @@
-## v2.0.5
+## v2.1.0 (minor)
 
-No significant changes detected since v2.0.5.
+Changes since v2.0.0:
+
+- test: make ScopeAfterManualDispose actually dispose while a scope is active [patch] ([@Claude](https://github.com/Claude))
 
 ## v2.0.5 (patch)
 
