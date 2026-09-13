@@ -420,6 +420,26 @@ public sealed class TemplateTests
 			Render(constructor));
 	}
 
+	[TestMethod]
+	public void AConstructorCanChainToThisWithNoArguments()
+	{
+		ConstructorTemplate constructor = new()
+		{
+			Name = "Widget",
+			Keywords = { "public" },
+			Parameters = { new ParameterTemplate { Type = "int", Name = "count" } },
+			ChainsToThis = true,
+		};
+
+		Assert.AreEqual(
+			"""
+			public Widget(int count)
+				: this() { }
+
+			""".ReplaceLineEndings("\n"),
+			Render(constructor));
+	}
+
 	#endregion
 
 	#region OperatorTemplate
