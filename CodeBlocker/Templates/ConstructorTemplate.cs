@@ -14,14 +14,16 @@ public class ConstructorTemplate : MemberTemplate
 	public Collection<ParameterTemplate> Parameters { get; } = [];
 
 	/// <summary>
-	/// Gets the arguments passed to the base constructor, written verbatim. Empty omits the
-	/// <c>: base(...)</c> clause entirely.
+	/// Gets the arguments passed to the constructor initialiser, written verbatim. Empty omits the
+	/// clause when <see cref="ChainsToThis"/> is <see langword="false"/> and emits <c>: this()</c>
+	/// when <see cref="ChainsToThis"/> is <see langword="true"/>.
 	/// </summary>
 	public Collection<string> BaseParameters { get; } = [];
 
 	/// <summary>
 	/// Gets or sets a value indicating whether the initialiser chains to <c>this</c> rather than
-	/// <c>base</c>.
+	/// <c>base</c>. When <see langword="true"/>, an initialiser is always emitted, including the
+	/// zero-argument form <c>: this()</c>.
 	/// </summary>
 	public bool ChainsToThis { get; set; }
 
@@ -49,7 +51,7 @@ public class ConstructorTemplate : MemberTemplate
 
 	private void WriteInitialiserTo(CodeBlocker codeBlocker)
 	{
-		if (BaseParameters.Count == 0)
+		if (!ChainsToThis && BaseParameters.Count == 0)
 		{
 			return;
 		}
