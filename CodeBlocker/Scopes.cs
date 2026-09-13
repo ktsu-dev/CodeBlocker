@@ -159,7 +159,8 @@ public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 /// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
 /// <param name="warnings">
 /// The warning identifiers to suppress, written verbatim after the directive — either a single
-/// identifier such as <c>CS1591</c> or a comma-separated list.
+/// identifier such as <c>CS1591</c> or a comma-separated list. Empty or whitespace warnings are a
+/// no-op and emit no directives.
 /// </param>
 public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, warnings), onClose: () => End(codeBlocker, warnings))
@@ -177,12 +178,22 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	private static void Begin(CodeBlocker codeBlocker, string warnings)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (string.IsNullOrWhiteSpace(warnings))
+		{
+			return;
+		}
+
 		codeBlocker.WriteLine($"#pragma warning disable {warnings}");
 	}
 
 	private static void End(CodeBlocker codeBlocker, string warnings)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (string.IsNullOrWhiteSpace(warnings))
+		{
+			return;
+		}
+
 		codeBlocker.WriteLine($"#pragma warning restore {warnings}");
 	}
 }
