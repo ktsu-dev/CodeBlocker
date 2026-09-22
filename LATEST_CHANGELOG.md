@@ -1,6 +1,6 @@
-## v2.1.8 (patch)
+## v2.1.9 (patch)
 
-Changes since v2.1.7:
+Changes since v2.1.8:
 
-- chore: close the local SonarCloud calibration gap ([@Claude](https://github.com/Claude))
+- Bump the ktsu group with 10 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
 
