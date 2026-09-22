@@ -19,13 +19,20 @@
     restore to pick up the PackageReference below.
 
     sonar-local.globalconfig (next to this file) sets the rule severities so the local warning set
-    approximates CI's.
+    matches CI's.
+
+    The analyzer version is pinned deliberately. A rule CI reports cannot be reproduced locally if
+    the pinned package predates it - that is a silent gap, not a visible failure, because a rule
+    the package does not carry simply never fires. 10.30.0.144632 is the first release carrying
+    S8969, which is why the pin sits here rather than on an older release. When calibrating against
+    a rule CI reports and this build does not, check that the package actually contains it before
+    assuming the severity line is wrong.
 
     Nothing in the repository imports this, so normal builds, the CI pipeline, and packaging are
     all unaffected.
   -->
   <ItemGroup>
-    <PackageReference Include="SonarAnalyzer.CSharp" VersionOverride="10.18.0.131500" PrivateAssets="all" />
+    <PackageReference Include="SonarAnalyzer.CSharp" VersionOverride="10.30.0.144632" PrivateAssets="all" />
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)sonar-local.globalconfig" />
   </ItemGroup>
 

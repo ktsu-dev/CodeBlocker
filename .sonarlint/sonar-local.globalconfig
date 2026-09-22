@@ -8,8 +8,10 @@ is_global = true
 # disabled by default. Raise them so a local run sees what CI sees.
 #
 # S3267 and S2699 are here because CI reported them on PR #87 - S3267 as new issues on
-# DocComment.Validate, S2699 against the older test files. The rest are carried over from the
-# equivalent config in ktsu.Semantics, whose quality profile is the closest available reference.
+# DocComment.Validate, S2699 against the older test files. S8969 is here because it is the
+# remaining issue this repository's SonarCloud project reports (see below). The rest are carried
+# over from the equivalent config in ktsu.Semantics, whose quality profile is the closest
+# available reference.
 dotnet_diagnostic.S107.severity = warning
 dotnet_diagnostic.S1075.severity = warning
 dotnet_diagnostic.S1172.severity = warning
@@ -22,13 +24,25 @@ dotnet_diagnostic.S3358.severity = warning
 dotnet_diagnostic.S3458.severity = warning
 dotnet_diagnostic.S3776.severity = warning
 dotnet_diagnostic.S6444.severity = warning
+dotnet_diagnostic.S8969.severity = warning
 
 # Enabled by default in the analyzer package. Left enabled here: unlike ktsu.Semantics, this
 # repository has not been shown to have a profile that excludes it, so a false positive is
 # cheaper than a missed finding.
 # dotnet_diagnostic.S1481.severity = none
 
-# KNOWN GAP: SonarCloud reported one new issue on PR #87 that this configuration does not
-# reproduce. The rule behind it is either absent from the analyzer package or shipped disabled
-# and not listed above. If you have dashboard access and can identify it, add it here - the
-# calibration is only as good as the rules it names.
+# Calibration. The list above is only as good as the rules it names, so check it against the
+# dashboard rather than guessing. The project is public, so this needs no token:
+#
+#   curl -s 'https://sonarcloud.io/api/issues/search?componentKeys=ktsu-dev_CodeBlocker&resolved=false&ps=100'
+#
+# Every rule that query returns should appear above, and a local run should report the same set.
+# As of this writing both sides agree: 5x S2699 in CodeBlocker.Test, and S8969 on
+# DocComment.cs:191.
+#
+# S8969 ("Null-forgiving operators should not be redundant") was the issue previously recorded
+# here as an unidentified gap. It was not a missing severity line - the rule ships disabled AND
+# was absent from the pinned analyzer package, so adding it alone would have changed nothing.
+# It needed the package bump to 10.30.0.144632 as well. That is the failure mode to watch for:
+# a rule CI reports that stays silent locally after being listed here is a package-version
+# problem, not a severity problem.
