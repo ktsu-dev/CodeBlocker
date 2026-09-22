@@ -42,16 +42,30 @@ The opt-in lives in `.sonarlint/sonar-local.props` (the analyzer package) and
 analyzer package ships disabled). Nothing imports these automatically, so normal builds, the CI
 pipeline, and packaging are unaffected.
 
-On current `main` the run is clean apart from five `S2699` warnings (test methods that assert
-nothing) in `CodeBlocker.Test`. It found and named `S4144` on `ScopeTests.cs` — two test methods with
-identical bodies, one of which did not test what its name claimed — which is the kind of finding the
-setup exists for.
+On current `main` the run reports six findings, and they are the same six SonarCloud reports:
+five `S2699` (test methods that assert nothing) in `CodeBlocker.Test`, and one `S8969` on
+`CodeBlocker/Templates/DocComment.cs:191` — a null-forgiving `text!` that the
+`string.IsNullOrEmpty(text)` guard directly above already makes redundant. The setup also earlier
+found and named `S4144` on `ScopeTests.cs` — two test methods with identical bodies, one of which
+did not test what its name claimed — which is the kind of finding it exists for.
 
-**Known gap:** SonarCloud reported one new issue on PR #87 that this configuration does not
-reproduce, and sonarcloud.io is not reachable from the agent sandbox to identify it. The rule
-behind it is either absent from the analyzer package or shipped disabled and not listed in the
-globalconfig. If you have dashboard access, add it — the calibration is only as good as the rules
-it names.
+### Recalibrating
+
+The local set is only as good as the rules `sonar-local.globalconfig` names, so check it against
+the dashboard rather than guessing. The SonarCloud project is public, so this needs no token:
+
+```bash
+curl -s 'https://sonarcloud.io/api/issues/search?componentKeys=ktsu-dev_CodeBlocker&resolved=false&ps=100'
+```
+
+Every rule it returns should be listed in the globalconfig, and a local run should report the same
+file-and-line set.
+
+If a rule CI reports stays silent locally *after* you add its severity line, the problem is the
+analyzer package version, not the severity. Rules ship in the package; one released after the
+pinned version simply cannot fire. That is exactly what hid `S8969` — it is both disabled by
+default and absent from the previously pinned `10.18.0.131500`, so it needed the bump to
+`10.30.0.144632` (its first release) as well as the severity line.
 
 ## Project Structure
 
