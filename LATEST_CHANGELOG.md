@@ -1,6 +1,6 @@
-## v2.1.7 (patch)
+## v2.1.8 (patch)
 
-Changes since v2.1.6:
+Changes since v2.1.7:
 
-- Bump Polyfill from 11.3.0 to 11.4.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- chore: close the local SonarCloud calibration gap ([@Claude](https://github.com/Claude))
 
