@@ -83,55 +83,6 @@ internal static class TemplateRendering
 	}
 
 	/// <summary>
-	/// Writes an expression body — the arrow, the expression and its terminating semicolon — and
-	/// ends the line.
-	/// </summary>
-	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="expressionFactory">
-	/// The callback that writes the expression, without <c>=&gt;</c> or a semicolon.
-	/// </param>
-	/// <remarks>
-	/// The first line of the expression stays on the declaration line, after the arrow, and every
-	/// following line is spliced at the current indent, so a multi-line switch expression, collection
-	/// expression or initialiser keeps the nesting it was written with. The semicolon goes on the last
-	/// line that has content, so a factory that ends with a line terminator does not leave it on a
-	/// line of its own.
-	/// </remarks>
-	internal static void WriteExpressionBody(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory)
-	{
-		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
-
-		int last = lines.Length - 1;
-		while (last >= 0 && lines[last].Length == 0)
-		{
-			last--;
-		}
-
-		codeBlocker.Write(" => ");
-		if (last < 0)
-		{
-			codeBlocker.WriteLine(";");
-			return;
-		}
-
-		for (int i = 0; i <= last; i++)
-		{
-			if (i == last)
-			{
-				codeBlocker.WriteLine(lines[i] + ";");
-			}
-			else if (lines[i].Length == 0)
-			{
-				codeBlocker.NewLine();
-			}
-			else
-			{
-				codeBlocker.WriteLine(lines[i]);
-			}
-		}
-	}
-
-	/// <summary>
 	/// Writes a parenthesised, comma-separated parameter list.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
@@ -242,5 +193,54 @@ internal static class TemplateRendering
 		// A braced body starts on the line after the declaration.
 		codeBlocker.WriteLine();
 		SpliceFragment(codeBlocker, body);
+	}
+
+	/// <summary>
+	/// Writes an expression body — the arrow, the expression and its terminating semicolon — and
+	/// ends the line.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
+	/// <param name="expressionFactory">
+	/// The callback that writes the expression, without <c>=&gt;</c> or a semicolon.
+	/// </param>
+	/// <remarks>
+	/// The first line of the expression stays on the declaration line, after the arrow, and every
+	/// following line is spliced at the current indent, so a multi-line switch expression, collection
+	/// expression or initialiser keeps the nesting it was written with. The semicolon goes on the last
+	/// line that has content, so a factory that ends with a line terminator does not leave it on a
+	/// line of its own.
+	/// </remarks>
+	internal static void WriteExpressionBody(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory)
+	{
+		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
+
+		int last = lines.Length - 1;
+		while (last >= 0 && lines[last].Length == 0)
+		{
+			last--;
+		}
+
+		codeBlocker.Write(" => ");
+		if (last < 0)
+		{
+			codeBlocker.WriteLine(";");
+			return;
+		}
+
+		for (int i = 0; i <= last; i++)
+		{
+			if (i == last)
+			{
+				codeBlocker.WriteLine(lines[i] + ";");
+			}
+			else if (lines[i].Length == 0)
+			{
+				codeBlocker.NewLine();
+			}
+			else
+			{
+				codeBlocker.WriteLine(lines[i]);
+			}
+		}
 	}
 }
