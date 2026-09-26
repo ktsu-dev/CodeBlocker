@@ -27,9 +27,9 @@ public abstract class TemplateBase
 	public string DefaultValue { get; set; } = string.Empty;
 
 	/// <summary>
-	/// Gets or sets a value indicating whether <see cref="DefaultValue"/> is written inside double
-	/// quotes. Set this for string literals; leave it clear for anything already written as an
-	/// expression.
+	/// Gets or sets a value indicating whether <see cref="DefaultValue"/> is written as a string
+	/// literal. Set this to pass the raw text of a string, which is escaped and quoted; leave it clear
+	/// for anything already written as an expression.
 	/// </summary>
 	public bool DefaultValueIsQuoted { get; set; }
 
@@ -79,8 +79,8 @@ public abstract class TemplateBase
 	}
 
 	/// <summary>
-	/// Writes <c> = value</c> when <see cref="DefaultValue"/> is set, quoting it when
-	/// <see cref="DefaultValueIsQuoted"/> is set.
+	/// Writes <c> = value</c> when <see cref="DefaultValue"/> is set, as an escaped string literal
+	/// when <see cref="DefaultValueIsQuoted"/> is set.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	protected void WriteDefaultValueTo(CodeBlocker codeBlocker)
@@ -93,7 +93,7 @@ public abstract class TemplateBase
 		}
 
 		codeBlocker.Write(" = ");
-		codeBlocker.Write(DefaultValueIsQuoted ? $"\"{DefaultValue}\"" : DefaultValue);
+		codeBlocker.Write(DefaultValueIsQuoted ? TemplateRendering.QuoteStringLiteral(DefaultValue) : DefaultValue);
 	}
 }
 

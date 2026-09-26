@@ -38,6 +38,17 @@ public sealed class TemplateTests
 			Render(new ParameterTemplate { Type = "string", Name = "name", DefaultValue = "none", DefaultValueIsQuoted = true }));
 
 	[TestMethod]
+	[DataRow(@"C:\temp", @"""C:\\temp""", DisplayName = "Backslash")]
+	[DataRow("say \"hi\"", @"""say \""hi\""""", DisplayName = "Quote")]
+	[DataRow("one\ntwo\r\n", @"""one\ntwo\r\n""", DisplayName = "Newline")]
+	[DataRow("tab\there\0", @"""tab\there\0""", DisplayName = "Tab and null")]
+	[DataRow("bell\u0007 sep\u2028", @"""bell\a sep\u2028""", DisplayName = "Other control and separator")]
+	public void ParameterEscapesAQuotedDefaultValue(string value, string expectedLiteral) =>
+		Assert.AreEqual(
+			$"string name = {expectedLiteral}",
+			Render(new ParameterTemplate { Type = "string", Name = "name", DefaultValue = value, DefaultValueIsQuoted = true }));
+
+	[TestMethod]
 	public void ParameterKeepsItsAttributesOnTheDeclarationLine()
 	{
 		ParameterTemplate parameter = new() { Type = "int", Name = "value", Attributes = { "In" }, Keywords = { "ref" } };
@@ -58,6 +69,12 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			"private const int Max = 10;\n",
 			Render(new FieldTemplate { Type = "int", Name = "Max", Keywords = { "private", "const" }, DefaultValue = "10" }));
+
+	[TestMethod]
+	public void FieldEscapesAQuotedInitialiser() =>
+		Assert.AreEqual(
+			"private string p = \"C:\\\\temp\\\\\\\"x\\\"\";\n",
+			Render(new FieldTemplate { Type = "string", Name = "p", Keywords = { "private" }, DefaultValue = "C:\\temp\\\"x\"", DefaultValueIsQuoted = true }));
 
 	[TestMethod]
 	public void FieldCommentsAndAttributesGoOnTheirOwnLines()
