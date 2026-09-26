@@ -328,6 +328,49 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void AMultiLineExpressionBodyKeepsABlankLineWithoutIndentingIt()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new PropertyTemplate
+				{
+					Type = "int",
+					Name = "X",
+					Keywords = { "public" },
+					ExpressionBodyFactory = codeBlocker =>
+					{
+						codeBlocker.WriteLine("a");
+						codeBlocker.NewLine();
+						codeBlocker.Write("+ b");
+					},
+				},
+			},
+		};
+
+		Assert.AreEqual(
+			"public class C\n{\n\tpublic int X => a\n\n\t+ b;\n}\n",
+			Render(type));
+	}
+
+	[TestMethod]
+	public void AnEmptyExpressionBodyStillTerminatesTheDeclaration()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "X",
+			Keywords = { "public" },
+			ExpressionBodyFactory = _ => { },
+		};
+
+		Assert.AreEqual("public int X => ;\n", Render(property));
+	}
+
+	[TestMethod]
 	public void ABlockBodiedAccessorIsBracedAndIndented()
 	{
 		PropertyTemplate property = new()
