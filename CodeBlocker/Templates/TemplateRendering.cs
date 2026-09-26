@@ -2,6 +2,9 @@
 
 namespace ktsu.CodeBlocker.Templates;
 
+using System.Globalization;
+using System.Text;
+
 /// <summary>
 /// The rendering steps shared by more than one template.
 /// </summary>
@@ -80,6 +83,54 @@ internal static class TemplateRendering
 				parent.WriteLine(line);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Formats raw text as a C# regular string literal, quoted and escaped so that it compiles and
+	/// evaluates back to exactly <paramref name="value"/>.
+	/// </summary>
+	/// <param name="value">The raw text of the string.</param>
+	/// <returns>The quoted literal.</returns>
+	/// <remarks>
+	/// Backslashes, quotes and the common control characters take their short escapes; any other
+	/// control character, and the line and paragraph separators the compiler also treats as line
+	/// breaks, take a <c>\uXXXX</c> escape.
+	/// </remarks>
+	internal static string QuoteStringLiteral(string value)
+	{
+		StringBuilder literal = new(value.Length + 2);
+		literal.Append('"');
+		foreach (char c in value)
+		{
+			string? escape = c switch
+			{
+				'\\' => @"\\",
+				'"' => "\\\"",
+				'\0' => @"\0",
+				'\a' => @"\a",
+				'\b' => @"\b",
+				'\f' => @"\f",
+				'\n' => @"\n",
+				'\r' => @"\r",
+				'\t' => @"\t",
+				'\v' => @"\v",
+				_ when char.IsControl(c) || c is '\u2028' or '\u2029' =>
+					@"\u" + ((int)c).ToString("x4", CultureInfo.InvariantCulture),
+				_ => null,
+			};
+
+			if (escape is null)
+			{
+				literal.Append(c);
+			}
+			else
+			{
+				literal.Append(escape);
+			}
+		}
+
+		literal.Append('"');
+		return literal.ToString();
 	}
 
 	/// <summary>
