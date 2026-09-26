@@ -52,9 +52,7 @@ public class PropertyTemplate : MemberTemplate
 
 		if (ExpressionBodyFactory is not null)
 		{
-			codeBlocker.Write(" => ");
-			codeBlocker.Write(TemplateRendering.RenderFragment(codeBlocker, ExpressionBodyFactory));
-			codeBlocker.WriteLine(";");
+			TemplateRendering.WriteExpressionBody(codeBlocker, ExpressionBodyFactory);
 			return;
 		}
 

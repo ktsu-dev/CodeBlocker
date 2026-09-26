@@ -91,9 +91,7 @@ public class AccessorTemplate
 
 			case AccessorKind.Expression:
 				codeBlocker.Write(prefix);
-				codeBlocker.Write(" => ");
-				codeBlocker.Write(TemplateRendering.RenderFragment(codeBlocker, BodyFactory));
-				codeBlocker.WriteLine(";");
+				TemplateRendering.WriteExpressionBody(codeBlocker, BodyFactory);
 				break;
 
 			case AccessorKind.Block:
