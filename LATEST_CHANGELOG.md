@@ -1,9 +1,9 @@
-## v2.2.0 (minor)
+## v2.3.0 (minor)
 
-Changes since v2.1.0:
+Changes since v2.2.0:
 
-- Escape quoted default values so the generated literal compiles ([@Claude](https://github.com/Claude))
-- chore: close the local SonarCloud calibration gap ([@Claude](https://github.com/Claude))
-- Gate Dependabot auto-merge on CI actually being green ([@Claude](https://github.com/Claude))
-- ci: adopt the consolidated .NET workflow [patch] ([@Claude](https://github.com/Claude))
+- Cover the blank-line and empty-expression paths of WriteExpressionBody ([@Claude](https://github.com/Claude))
+- Merge remote-tracking branch 'origin/main' into fix/splice-multiline-expression-bodies ([@Claude](https://github.com/Claude))
+- Move WriteExpressionBody after WriteBody ([@Claude](https://github.com/Claude))
+- Keep the enclosing indent on multi-line expression bodies ([@Claude](https://github.com/Claude))
 
