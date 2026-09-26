@@ -212,6 +212,105 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void AMultiLineExpressionBodiedPropertyKeepsTheEnclosingIndent()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new PropertyTemplate
+				{
+					Type = "int",
+					Name = "X",
+					Keywords = { "public" },
+					ExpressionBodyFactory = codeBlocker =>
+					{
+						codeBlocker.WriteLine("k switch");
+						codeBlocker.WriteLine("{");
+						codeBlocker.Indent();
+						codeBlocker.WriteLine("_ => 0,");
+						codeBlocker.Outdent();
+						codeBlocker.Write("}");
+					},
+				},
+			},
+		};
+
+		Assert.AreEqual(
+			"""
+			public class C
+			{
+				public int X => k switch
+				{
+					_ => 0,
+				};
+			}
+
+			""".ReplaceLineEndings("\n"),
+			Render(type));
+	}
+
+	[TestMethod]
+	public void AMultiLineExpressionBodiedAccessorKeepsTheEnclosingIndent()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new PropertyTemplate
+				{
+					Type = "int[]",
+					Name = "Items",
+					Keywords = { "public" },
+					Getter = AccessorTemplate.Expression(codeBlocker =>
+					{
+						codeBlocker.WriteLine("[");
+						codeBlocker.Indent();
+						codeBlocker.WriteLine("1,");
+						codeBlocker.WriteLine("2,");
+						codeBlocker.Outdent();
+						codeBlocker.WriteLine("]");
+					}),
+				},
+			},
+		};
+
+		Assert.AreEqual(
+			"""
+			public class C
+			{
+				public int[] Items
+				{
+					get => [
+						1,
+						2,
+					];
+				}
+			}
+
+			""".ReplaceLineEndings("\n"),
+			Render(type));
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInALineTerminatorKeepsItsSemicolonOnTheLastLine()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "Doubled",
+			Keywords = { "public" },
+			ExpressionBodyFactory = codeBlocker => codeBlocker.WriteLine("count * 2"),
+		};
+
+		Assert.AreEqual("public int Doubled => count * 2;\n", Render(property));
+	}
+
+	[TestMethod]
 	public void ABlockBodiedAccessorIsBracedAndIndented()
 	{
 		PropertyTemplate property = new()
