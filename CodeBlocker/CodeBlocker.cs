@@ -30,6 +30,16 @@ public class CodeBlocker : IDisposable
 	private bool disposedValue;
 	private bool shouldDisposeWriter;
 
+	/// <summary>
+	/// Whether the current line has been started by <see cref="Write"/> and not yet terminated.
+	/// </summary>
+	/// <remarks>
+	/// <see cref="NewLine"/> needs this: <see cref="IndentedTextWriter.WriteLineNoTabs"/> keeps a
+	/// blank line free of indentation, but it does not re-arm the writer's pending-tab flag, so using
+	/// it to end a line that is already under way would leave the next line at column zero.
+	/// </remarks>
+	private bool isMidLine;
+
 	private IndentedTextWriter IndentedTextWriter { get; }
 
 	/// <summary>
@@ -203,24 +213,57 @@ public class CodeBlocker : IDisposable
 	/// <summary>
 	/// Write a line of code without indentation.
 	/// </summary>
-	public void NewLine() => IndentedTextWriter.WriteLineNoTabs(string.Empty);
+	/// <remarks>
+	/// At the start of a line this writes a blank line with no indentation. After a partial
+	/// <see cref="Write"/> it ends that line instead, and the next line is indented as usual.
+	/// </remarks>
+	public void NewLine()
+	{
+		if (isMidLine)
+		{
+			// Nothing is pending, so WriteLine() writes no tabs here, but it does re-arm them for
+			// whatever is written next.
+			IndentedTextWriter.WriteLine();
+		}
+		else
+		{
+			IndentedTextWriter.WriteLineNoTabs(string.Empty);
+		}
+
+		isMidLine = false;
+	}
 
 	/// <summary>
 	/// Write a line of code with indentation.
 	/// </summary>
 	/// <param name="line">The line of code to write.</param>
-	public void WriteLine(string line) => IndentedTextWriter.WriteLine(line);
+	public void WriteLine(string line)
+	{
+		IndentedTextWriter.WriteLine(line);
+		isMidLine = false;
+	}
 
 	/// <summary>
 	/// Write a line of code with indentation.
 	/// </summary>
-	public void WriteLine() => IndentedTextWriter.WriteLine();
+	public void WriteLine()
+	{
+		IndentedTextWriter.WriteLine();
+		isMidLine = false;
+	}
 
 	/// <summary>
 	/// Write a line of code with indentation.
 	/// </summary>
 	/// <param name="text">The text to write.</param>
-	public void Write(string text) => IndentedTextWriter.Write(text);
+	public void Write(string text)
+	{
+		IndentedTextWriter.Write(text);
+		if (!string.IsNullOrEmpty(text))
+		{
+			isMidLine = true;
+		}
+	}
 
 	/// <summary>
 	/// Increase the indentation level.

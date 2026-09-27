@@ -184,9 +184,7 @@ internal static class TemplateRendering
 			return;
 		}
 
-		// Terminate the declaration line the constraints hang off. WriteLine() rather than
-		// NewLine(): NewLine() writes through IndentedTextWriter.WriteLineNoTabs, which does not
-		// re-arm the writer's pending-tab flag, so whatever came next would land at column zero.
+		// Terminate the declaration line the constraints hang off.
 		codeBlocker.WriteLine();
 
 		using IndentScope indent = new(codeBlocker);
@@ -271,6 +269,14 @@ internal static class TemplateRendering
 			last--;
 		}
 
+		// Leading blank lines are skipped as trailing ones are, so the first line with content
+		// stays on the declaration line rather than leaving the arrow dangling at its end.
+		int first = 0;
+		while (first < last && lines[first].Length == 0)
+		{
+			first++;
+		}
+
 		codeBlocker.Write(" => ");
 		if (last < 0)
 		{
@@ -278,7 +284,7 @@ internal static class TemplateRendering
 			return;
 		}
 
-		for (int i = 0; i <= last; i++)
+		for (int i = first; i <= last; i++)
 		{
 			if (i == last)
 			{
