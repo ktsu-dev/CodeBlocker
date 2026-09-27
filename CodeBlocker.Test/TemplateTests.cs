@@ -357,6 +357,35 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void AnExpressionBodyStartingWithABlankLineKeepsItsFirstLineOnTheDeclaration()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new PropertyTemplate
+				{
+					Type = "int",
+					Name = "X",
+					Keywords = { "public" },
+					ExpressionBodyFactory = codeBlocker =>
+					{
+						codeBlocker.NewLine();
+						codeBlocker.WriteLine("1 +");
+						codeBlocker.Write("2");
+					},
+				},
+			},
+		};
+
+		Assert.AreEqual(
+			"public class C\n{\n\tpublic int X => 1 +\n\t2;\n}\n",
+			Render(type));
+	}
+
+	[TestMethod]
 	public void AnEmptyExpressionBodyStillTerminatesTheDeclaration()
 	{
 		PropertyTemplate property = new()

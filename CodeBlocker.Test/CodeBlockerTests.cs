@@ -72,6 +72,36 @@ public sealed class CodeBlockerTests
 	}
 
 	[TestMethod]
+	public void NewLineAfterAPartialWriteKeepsTheNextLineIndented()
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		codeBlocker.WriteLine("class C");
+		using (new Scope(codeBlocker))
+		{
+			codeBlocker.Write("int x = 1;");
+			codeBlocker.NewLine();
+			codeBlocker.WriteLine("int y = 2;");
+		}
+
+		Assert.AreEqual("class C\n{\n\tint x = 1;\n\tint y = 2;\n}\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void NewLineAtTheStartOfALineStillWritesNoIndentation()
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		codeBlocker.Indent();
+		codeBlocker.Write("a");
+		codeBlocker.NewLine();
+		codeBlocker.NewLine();
+		codeBlocker.WriteLine("b");
+
+		Assert.AreEqual("\ta\n\n\tb\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void WriteLineWithIndentationShouldRespectIndentLevel()
 	{
 		// Arrange
