@@ -1,6 +1,8 @@
-## v2.3.0
+## v2.3.1 (patch)
 
-No significant changes detected since v2.3.0.
+Changes since v2.3.0:
+
+- Keep the next line indented when NewLine() ends a partial Write() [patch] ([@Claude](https://github.com/Claude))
 
 ## v2.3.0 (minor)
 
