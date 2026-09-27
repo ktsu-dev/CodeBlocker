@@ -1,6 +1,4 @@
-## v2.3.1 (patch)
+## v2.3.1
 
-Changes since v2.3.0:
-
-- Keep the next line indented when NewLine() ends a partial Write() [patch] ([@Claude](https://github.com/Claude))
+No significant changes detected since v2.3.1.
 
