@@ -112,12 +112,12 @@ public class DocComment
 
 		foreach (DocTag typeParam in TypeParams)
 		{
-			WriteElement(codeBlocker, "typeparam", $" name=\"{EscapeAttribute(typeParam.Name)}\"", typeParam.Text);
+			WriteNamedElement(codeBlocker, "typeparam", $" name=\"{EscapeAttribute(typeParam.Name)}\"", typeParam.Text);
 		}
 
 		foreach (DocTag param in Params)
 		{
-			WriteElement(codeBlocker, "param", $" name=\"{EscapeAttribute(param.Name)}\"", param.Text);
+			WriteNamedElement(codeBlocker, "param", $" name=\"{EscapeAttribute(param.Name)}\"", param.Text);
 		}
 
 		WriteElement(codeBlocker, "returns", null, Returns);
@@ -125,7 +125,7 @@ public class DocComment
 
 		foreach (DocTag exception in Exceptions)
 		{
-			WriteElement(codeBlocker, "exception", $" cref=\"{EscapeAttribute(exception.Name)}\"", exception.Text);
+			WriteNamedElement(codeBlocker, "exception", $" cref=\"{EscapeAttribute(exception.Name)}\"", exception.Text);
 		}
 
 		WriteElement(codeBlocker, "remarks", null, Remarks);
@@ -188,7 +188,21 @@ public class DocComment
 			return;
 		}
 
-		string[] lines = SplitLines(text!);
+		WriteNamedElement(codeBlocker, tagName, attributes, text);
+	}
+
+	/// <summary>
+	/// Writes an element whose attribute names what it documents. Unlike the unnamed elements, it is
+	/// written even when its text is empty: <see cref="Validate"/> counts it as documenting that
+	/// name, and leaving it out would raise the CS1573 the validation promised was not coming.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
+	/// <param name="tagName">The element name.</param>
+	/// <param name="attributes">The element's attributes, already escaped.</param>
+	/// <param name="text">The element's content.</param>
+	private void WriteNamedElement(CodeBlocker codeBlocker, string tagName, string? attributes, string? text)
+	{
+		string[] lines = SplitLines(text ?? string.Empty);
 		if (lines.Length == 1)
 		{
 			codeBlocker.WriteLine($"/// <{tagName}{attributes}>{Escape(lines[0])}</{tagName}>");

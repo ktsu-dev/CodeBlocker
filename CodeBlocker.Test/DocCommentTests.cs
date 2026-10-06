@@ -188,6 +188,38 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	public void ANamedTagWithEmptyTextIsStillWritten()
+	{
+		DocComment documentation = new() { Summary = "S" };
+		documentation.TypeParams.Add(new DocTag { Name = "T", Text = "" });
+		documentation.Params.Add(new DocTag { Name = "a", Text = "A" });
+		documentation.Params.Add(new DocTag { Name = "b", Text = "" });
+		documentation.Exceptions.Add(new DocTag { Name = "ArgumentException", Text = "" });
+
+		Assert.IsEmpty(documentation.Validate(["a", "b"], ["T"]));
+		Assert.AreEqual(
+			"""
+			/// <summary>S</summary>
+			/// <typeparam name="T"></typeparam>
+			/// <param name="a">A</param>
+			/// <param name="b"></param>
+			/// <exception cref="ArgumentException"></exception>
+
+			""".ReplaceLineEndings("\n"),
+			Render(documentation));
+	}
+
+	[TestMethod]
+	public void ACommentHoldingOnlyAnEmptyParamIsNotEmptyAndWritesIt()
+	{
+		DocComment documentation = new();
+		documentation.Params.Add(new DocTag { Name = "b", Text = "" });
+
+		Assert.IsFalse(documentation.IsEmpty);
+		Assert.AreEqual("/// <param name=\"b\"></param>\n", Render(documentation));
+	}
+
+	[TestMethod]
 	public void ValidationRejectsNullArguments()
 	{
 		DocComment documentation = new();
