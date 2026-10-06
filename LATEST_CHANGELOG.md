@@ -1,6 +1,6 @@
-## v2.3.3-pre.2 (prerelease)
+## v2.3.3 (patch)
 
-Changes since v2.3.3-pre.1:
+Changes since v2.3.2:
 
-- Bump Polyfill from 11.4.1 to 11.4.2 ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Write param, typeparam and exception tags even when their text is empty [patch] ([@Claude](https://github.com/Claude))
 
