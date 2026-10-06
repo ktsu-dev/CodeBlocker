@@ -42,12 +42,12 @@ The opt-in lives in `.sonarlint/sonar-local.props` (the analyzer package) and
 analyzer package ships disabled). Nothing imports these automatically, so normal builds, the CI
 pipeline, and packaging are unaffected.
 
-On current `main` the run reports six findings, and they are the same six SonarCloud reports:
-five `S2699` (test methods that assert nothing) in `CodeBlocker.Test`, and one `S8969` on
-`CodeBlocker/Templates/DocComment.cs:191` — a null-forgiving `text!` that the
-`string.IsNullOrEmpty(text)` guard directly above already makes redundant. The setup also earlier
-found and named `S4144` on `ScopeTests.cs` — two test methods with identical bodies, one of which
-did not test what its name claimed — which is the kind of finding it exists for.
+On current `main` the run reports five findings, and they are the same five SonarCloud reports:
+five `S2699` (test methods that assert nothing) in `CodeBlocker.Test`. The setup also earlier found
+and named `S8969` on `CodeBlocker/Templates/DocComment.cs` — a null-forgiving `text!` that the
+`string.IsNullOrEmpty(text)` guard directly above already made redundant — and `S4144` on
+`ScopeTests.cs` — two test methods with identical bodies, one of which did not test what its name
+claimed — which is the kind of finding it exists for.
 
 ### Recalibrating
 
