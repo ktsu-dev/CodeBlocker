@@ -479,6 +479,67 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	[DataRow(1)]
+	[DataRow(2)]
+	public void ABodyThatWritesOnlyBlankLinesRendersAsAnEmptyBlock(int newLines)
+	{
+		// A NewLine after a loop over an empty collection used to leave "public void M() " with no
+		// body, which does not compile (CS0501).
+		MethodTemplate method = new()
+		{
+			Type = "void",
+			Name = "M",
+			Keywords = { "public" },
+			BodyFactory = codeBlocker =>
+			{
+				for (int i = 0; i < newLines; i++)
+				{
+					codeBlocker.NewLine();
+				}
+			},
+		};
+
+		Assert.AreEqual("public void M() { }\n", Render(method));
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyBetweenBlankLinesStaysOnTheDeclarationLine() =>
+		Assert.AreEqual(
+			"public void Reset() => count = 0;\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "Reset",
+				Keywords = { "public" },
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.NewLine();
+					codeBlocker.WriteLine("=> count = 0;");
+					codeBlocker.NewLine();
+				},
+			}));
+
+	[TestMethod]
+	public void ABlankLineInsideABracedBodyIsKept()
+	{
+		MethodTemplate method = new()
+		{
+			Type = "void",
+			Name = "Run",
+			Keywords = { "public" },
+			BodyFactory = codeBlocker =>
+			{
+				using Scope scope = new(codeBlocker);
+				codeBlocker.WriteLine("First();");
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("Second();");
+			},
+		};
+
+		Assert.AreEqual("public void Run()\n{\n\tFirst();\n\n\tSecond();\n}\n", Render(method));
+	}
+
+	[TestMethod]
 	public void AMultiLineBodyIsIndentedToWhereItIsSpliced()
 	{
 		MethodTemplate method = new()
@@ -567,6 +628,25 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			"public Widget() { }\n",
 			Render(new ConstructorTemplate { Name = "Widget", Keywords = { "public" } }));
+
+	[TestMethod]
+	[DataRow(1)]
+	[DataRow(2)]
+	public void AConstructorBodyThatWritesOnlyBlankLinesIsAnEmptyBlock(int newLines) =>
+		Assert.AreEqual(
+			"public Widget() { }\n",
+			Render(new ConstructorTemplate
+			{
+				Name = "Widget",
+				Keywords = { "public" },
+				BodyFactory = codeBlocker =>
+				{
+					for (int i = 0; i < newLines; i++)
+					{
+						codeBlocker.NewLine();
+					}
+				},
+			}));
 
 	[TestMethod]
 	public void AConstructorInitialiserIsIndentedOnItsOwnLine()
