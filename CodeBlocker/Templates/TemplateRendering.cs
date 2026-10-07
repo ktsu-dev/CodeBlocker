@@ -223,19 +223,24 @@ internal static class TemplateRendering
 		string body = RenderFragment(codeBlocker, bodyFactory);
 		string[] lines = SplitLines(codeBlocker, body);
 
+		// Blank lines carry no body of their own, so they are left out when deciding its shape. A
+		// factory that only wrote spacing, such as a NewLine after a loop over an empty collection,
+		// would otherwise leave the declaration with no body at all.
+		string[] contentLines = [.. lines.Where(line => line.Length != 0)];
+
 		// A factory that wrote nothing means "declared, but empty" — a virtual base method, or a
 		// constructor that only forwards to its base.
-		if (lines.Length == 0)
+		if (contentLines.Length == 0)
 		{
 			codeBlocker.WriteLine(" { }");
 			return;
 		}
 
-		if (lines.Length == 1)
+		if (contentLines.Length == 1)
 		{
 			// An expression body stays on the declaration line.
 			codeBlocker.Write(" ");
-			codeBlocker.WriteLine(lines[0]);
+			codeBlocker.WriteLine(contentLines[0]);
 			return;
 		}
 
