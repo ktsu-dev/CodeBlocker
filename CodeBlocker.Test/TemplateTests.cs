@@ -1047,4 +1047,122 @@ public sealed class TemplateTests
 	}
 
 	#endregion
+
+	#region Verbatim string literals in bodies
+
+	private static string RenderInClass(MemberTemplate member)
+	{
+		ClassTemplate type = new() { Name = "C", Members = { member } };
+		return Render(type);
+	}
+
+	[TestMethod]
+	public void AMethodBodyKeepsAVerbatimStringsContinuationLinesAsWritten()
+	{
+		MethodTemplate method = new()
+		{
+			Name = "M",
+			Type = "string",
+			BodyFactory = b =>
+			{
+				b.WriteLine("{");
+				b.Indent();
+				b.WriteLine("return @\"line1\nline2\";");
+				b.Outdent();
+				b.WriteLine("}");
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring M()\n\t{\n\t\treturn @\"line1\nline2\";\n\t}\n}\n",
+			RenderInClass(method));
+	}
+
+	[TestMethod]
+	public void ABlockAccessorKeepsAnInterpolatedVerbatimStringsContinuationLinesAsWritten()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "string",
+			Name = "P",
+			Getter = AccessorTemplate.Block(b => b.WriteLine("return $@\"{name}\n  \"\"{name}\"\"\n{{done}}\";")),
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring P\n\t{\n\t\tget\n\t\t{\n\t\t\treturn $@\"{name}\n  \"\"{name}\"\"\n{{done}}\";\n\t\t}\n\t}\n}\n",
+			RenderInClass(property));
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyKeepsAVerbatimStringsContinuationLinesAsWritten()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "string",
+			Name = "P",
+			ExpressionBodyFactory = b =>
+			{
+				b.WriteLine("Join(");
+				b.Indent();
+				b.WriteLine("@$\"a{Format(\"}\", @\"x\ny\")}\nb\",");
+				b.WriteLine("c)");
+				b.Outdent();
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring P => Join(\n\t\t@$\"a{Format(\"}\", @\"x\ny\")}\nb\",\n\t\tc);\n}\n",
+			RenderInClass(property));
+	}
+
+	[TestMethod]
+	public void QuotesInCommentsCharactersAndRegularStringsDoNotStartAVerbatimString()
+	{
+		MethodTemplate method = new()
+		{
+			Name = "M",
+			Type = "void",
+			BodyFactory = b =>
+			{
+				b.WriteLine("{");
+				b.Indent();
+				b.WriteLine("// say @\"");
+				b.WriteLine("/* or @\" */ char q = '\"';");
+				b.WriteLine("string s = \"@\\\"\" + @\"\";");
+				b.WriteLine("Call();");
+				b.Outdent();
+				b.WriteLine("}");
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tvoid M()\n\t{\n\t\t// say @\"\n\t\t/* or @\" */ char q = '\"';\n\t\tstring s = \"@\\\"\" + @\"\";\n\t\tCall();\n\t}\n}\n",
+			RenderInClass(method));
+	}
+
+	[TestMethod]
+	public void ARawStringLiteralIsStillReindented()
+	{
+		MethodTemplate method = new()
+		{
+			Name = "M",
+			Type = "string",
+			BodyFactory = b =>
+			{
+				b.WriteLine("{");
+				b.Indent();
+				b.WriteLine("return \"\"\"");
+				b.WriteLine("\"@ text");
+				b.WriteLine("\"\"\";");
+				b.Outdent();
+				b.WriteLine("}");
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring M()\n\t{\n\t\treturn \"\"\"\n\t\t\"@ text\n\t\t\"\"\";\n\t}\n}\n",
+			RenderInClass(method));
+	}
+
+	#endregion
 }
