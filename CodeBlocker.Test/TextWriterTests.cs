@@ -23,9 +23,13 @@ public sealed class TextWriterTests
 
 		public bool Disposed { get; private set; }
 
+		public bool Flushed { get; private set; }
+
 		public override Encoding Encoding => Encoding.UTF8;
 
 		public override void Write(char value) => builder.Append(value);
+
+		public override void Flush() => Flushed = true;
 
 		public override string ToString() => builder.ToString();
 
@@ -179,5 +183,23 @@ public sealed class TextWriterTests
 		}
 
 		Assert.AreEqual("class C\n{\n\tint x;\n\n\tint y;\n}\n", target.ToString());
+	}
+
+	[TestMethod]
+	public void TheTerminatingWriterForwardsEverythingButItsNewLine()
+	{
+		using RecordingWriter target = new() { NewLine = NewLines.CrLf };
+		using CodeBlocker.TerminatingWriter terminatingWriter = new(target) { NewLine = NewLines.Lf };
+
+		terminatingWriter.Write('a');
+		terminatingWriter.Write("bc");
+		terminatingWriter.Write(['x', 'd', 'e', 'x'], 1, 2);
+		terminatingWriter.WriteLine();
+		terminatingWriter.Flush();
+
+		Assert.AreEqual("abcde\n", target.ToString());
+		Assert.IsTrue(target.Flushed, "Flush must reach the wrapped writer.");
+		Assert.AreSame(target.Encoding, terminatingWriter.Encoding);
+		Assert.AreEqual(NewLines.CrLf, target.NewLine, "The wrapper's terminator must not leak into the wrapped writer.");
 	}
 }

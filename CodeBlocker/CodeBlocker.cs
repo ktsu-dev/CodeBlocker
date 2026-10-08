@@ -297,7 +297,7 @@ public class CodeBlocker : IDisposable
 	/// <remarks>
 	/// It does not own the wrapped writer: disposing it leaves that writer open.
 	/// </remarks>
-	private sealed class TerminatingWriter(TextWriter inner) : TextWriter(inner.FormatProvider)
+	internal sealed class TerminatingWriter(TextWriter inner) : TextWriter(inner.FormatProvider)
 	{
 		public override Encoding Encoding => inner.Encoding;
 
