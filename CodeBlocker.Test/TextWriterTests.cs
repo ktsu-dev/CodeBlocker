@@ -143,4 +143,41 @@ public sealed class TextWriterTests
 		Assert.AreEqual("  ", codeBlocker.IndentString);
 		Assert.AreEqual(NewLines.CrLf, codeBlocker.NewLineString);
 	}
+
+	[TestMethod]
+	public void TheCallersNewLineIsLeftAsItWas()
+	{
+		using StringWriter target = new() { NewLine = NewLines.CrLf };
+
+		using (CodeBlocker codeBlocker = new(target))
+		{
+			Assert.AreEqual(NewLines.CrLf, target.NewLine, "Constructing a CodeBlocker must not change the caller's terminator.");
+			codeBlocker.WriteLine("x");
+		}
+
+		Assert.AreEqual(NewLines.CrLf, target.NewLine, "Disposing a CodeBlocker must not change the caller's terminator.");
+
+		target.WriteLine("caller line");
+		Assert.AreEqual("x\ncaller line\r\n", target.ToString());
+	}
+
+	[TestMethod]
+	public void EveryTerminatorUsesNewLineStringWhateverTheCallersNewLine()
+	{
+		using StringWriter target = new() { NewLine = NewLines.CrLf };
+
+		using (CodeBlocker codeBlocker = new(target, CodeBlocker.DefaultIndentString, NewLines.Lf))
+		{
+			codeBlocker.WriteLine("class C");
+			using (new Scope(codeBlocker))
+			{
+				codeBlocker.Write("int x;");
+				codeBlocker.NewLine();
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("int y;");
+			}
+		}
+
+		Assert.AreEqual("class C\n{\n\tint x;\n\n\tint y;\n}\n", target.ToString());
+	}
 }

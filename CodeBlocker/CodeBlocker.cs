@@ -4,6 +4,7 @@ namespace ktsu.CodeBlocker;
 
 using Polyfills;
 using System.CodeDom.Compiler;
+using System.Text;
 
 /// <summary>
 /// Class to create indented code blocks wrapped in braces.
@@ -155,12 +156,17 @@ public class CodeBlocker : IDisposable
 		IndentString = indentString;
 		NewLineString = newLineString;
 
-		// The terminator is set on both writers rather than on IndentedTextWriter alone: its NewLine
-		// property forwards to the inner writer on modern targets, but CodeBlocker also ships for
-		// netstandard2.0, where the running framework supplies IndentedTextWriter and that forwarding
-		// is not guaranteed. Setting both is cheap and makes the behaviour identical everywhere.
-		writer.NewLine = newLineString;
-		IndentedTextWriter = new IndentedTextWriter(writer, indentString)
+		// IndentedTextWriter writes its terminators through the inner writer's NewLine — and on modern
+		// targets setting its own NewLine forwards there too — so it gets a private forwarding writer
+		// that carries the terminator. Setting NewLine on the caller's writer instead would change
+		// how their own WriteLine calls end, long after this instance is gone. The terminator is
+		// still set on both writers because CodeBlocker also ships for netstandard2.0, where the
+		// running framework supplies IndentedTextWriter and that forwarding is not guaranteed.
+		TerminatingWriter terminatingWriter = new(writer)
+		{
+			NewLine = newLineString
+		};
+		IndentedTextWriter = new IndentedTextWriter(terminatingWriter, indentString)
 		{
 			NewLine = newLineString
 		};
@@ -282,6 +288,26 @@ public class CodeBlocker : IDisposable
 	{
 		get => IndentedTextWriter.Indent;
 		set => IndentedTextWriter.Indent = value;
+	}
+
+	/// <summary>
+	/// Passes everything through to the writer it wraps but keeps a line terminator of its own, so
+	/// that writing <see cref="NewLineString"/> never means changing the caller's writer.
+	/// </summary>
+	/// <remarks>
+	/// It does not own the wrapped writer: disposing it leaves that writer open.
+	/// </remarks>
+	private sealed class TerminatingWriter(TextWriter inner) : TextWriter(inner.FormatProvider)
+	{
+		public override Encoding Encoding => inner.Encoding;
+
+		public override void Write(char value) => inner.Write(value);
+
+		public override void Write(char[] buffer, int index, int count) => inner.Write(buffer, index, count);
+
+		public override void Write(string? value) => inner.Write(value);
+
+		public override void Flush() => inner.Flush();
 	}
 
 	/// <summary>
