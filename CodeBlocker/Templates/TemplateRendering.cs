@@ -45,18 +45,50 @@ internal static class TemplateRendering
 	/// <param name="parent">The <see cref="CodeBlocker"/> the fragment was rendered for.</param>
 	/// <param name="fragment">The rendered fragment.</param>
 	/// <returns>The fragment's lines.</returns>
+	/// <remarks>
+	/// A terminator inside a verbatim string literal (<c>@"..."</c>, <c>$@"..."</c>, <c>@$"..."</c>)
+	/// is part of the string's value, not a line break in the code, so it is not a split point: the
+	/// line that holds it keeps the terminator, and writing that line through
+	/// <see cref="CodeBlocker.WriteLine(string)"/> indents only its first physical line. Re-indenting
+	/// the continuation lines instead would add the indent to the string's value.
+	/// </remarks>
 	internal static string[] SplitLines(CodeBlocker parent, string fragment)
 	{
-		string[] lines = fragment.Split([parent.NewLineString], StringSplitOptions.None);
-		if (lines.Length == 0 || lines[^1].Length != 0)
+		string terminator = parent.NewLineString;
+		if (terminator.Length == 0)
 		{
-			return lines;
+			return fragment.Length == 0 ? [] : [fragment];
 		}
 
-		// Array range indexing would need RuntimeHelpers.GetSubArray, which netstandard2.0 lacks.
-		string[] trimmed = new string[lines.Length - 1];
-		Array.Copy(lines, trimmed, trimmed.Length);
-		return trimmed;
+		bool[] inVerbatimText = VerbatimStringScanner.FindVerbatimText(fragment);
+		List<string> lines = [];
+		int lineStart = 0;
+		int searchFrom = 0;
+		while (true)
+		{
+			int split = fragment.IndexOf(terminator, searchFrom, StringComparison.Ordinal);
+			if (split < 0)
+			{
+				break;
+			}
+
+			searchFrom = split + terminator.Length;
+			if (inVerbatimText[split])
+			{
+				continue;
+			}
+
+			lines.Add(fragment[lineStart..split]);
+			lineStart = searchFrom;
+		}
+
+		// A trailing terminator leaves an empty tail, which is not a line of its own.
+		if (lineStart < fragment.Length)
+		{
+			lines.Add(fragment[lineStart..]);
+		}
+
+		return [.. lines];
 	}
 
 	/// <summary>

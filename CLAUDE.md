@@ -117,7 +117,10 @@ The library is built around these types:
    When emitting a multi-line fragment inside a template, route it through
    `TemplateRendering.SpliceFragment` rather than `NewLine()`/`WriteLineNoTabs` —
    `IndentedTextWriter.WriteLineNoTabs` does not re-arm the pending-tab flag, so the next line
-   silently lands at column 0.
+   silently lands at column 0. `SplitLines` (which `SpliceFragment` uses) does not split at a
+   terminator inside a verbatim string literal (`@"..."`, `$@"..."`): `VerbatimStringScanner`
+   finds them, so a literal's continuation lines keep their exact text instead of picking up the
+   indent, which would change the string's value. Raw string literals are still re-indented.
 
 ## SDK and Dependencies
 
