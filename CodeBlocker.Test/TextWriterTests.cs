@@ -23,9 +23,13 @@ public sealed class TextWriterTests
 
 		public bool Disposed { get; private set; }
 
+		public bool Flushed { get; private set; }
+
 		public override Encoding Encoding => Encoding.UTF8;
 
 		public override void Write(char value) => builder.Append(value);
+
+		public override void Flush() => Flushed = true;
 
 		public override string ToString() => builder.ToString();
 
@@ -142,5 +146,60 @@ public sealed class TextWriterTests
 		Assert.AreEqual("  x\r\n", target.ToString());
 		Assert.AreEqual("  ", codeBlocker.IndentString);
 		Assert.AreEqual(NewLines.CrLf, codeBlocker.NewLineString);
+	}
+
+	[TestMethod]
+	public void TheCallersNewLineIsLeftAsItWas()
+	{
+		using StringWriter target = new() { NewLine = NewLines.CrLf };
+
+		using (CodeBlocker codeBlocker = new(target))
+		{
+			Assert.AreEqual(NewLines.CrLf, target.NewLine, "Constructing a CodeBlocker must not change the caller's terminator.");
+			codeBlocker.WriteLine("x");
+		}
+
+		Assert.AreEqual(NewLines.CrLf, target.NewLine, "Disposing a CodeBlocker must not change the caller's terminator.");
+
+		target.WriteLine("caller line");
+		Assert.AreEqual("x\ncaller line\r\n", target.ToString());
+	}
+
+	[TestMethod]
+	public void EveryTerminatorUsesNewLineStringWhateverTheCallersNewLine()
+	{
+		using StringWriter target = new() { NewLine = NewLines.CrLf };
+
+		using (CodeBlocker codeBlocker = new(target, CodeBlocker.DefaultIndentString, NewLines.Lf))
+		{
+			codeBlocker.WriteLine("class C");
+			using (new Scope(codeBlocker))
+			{
+				codeBlocker.Write("int x;");
+				codeBlocker.NewLine();
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("int y;");
+			}
+		}
+
+		Assert.AreEqual("class C\n{\n\tint x;\n\n\tint y;\n}\n", target.ToString());
+	}
+
+	[TestMethod]
+	public void TheTerminatingWriterForwardsEverythingButItsNewLine()
+	{
+		using RecordingWriter target = new() { NewLine = NewLines.CrLf };
+		using CodeBlocker.TerminatingWriter terminatingWriter = new(target) { NewLine = NewLines.Lf };
+
+		terminatingWriter.Write('a');
+		terminatingWriter.Write("bc");
+		terminatingWriter.Write(['x', 'd', 'e', 'x'], 1, 2);
+		terminatingWriter.WriteLine();
+		terminatingWriter.Flush();
+
+		Assert.AreEqual("abcde\n", target.ToString());
+		Assert.IsTrue(target.Flushed, "Flush must reach the wrapped writer.");
+		Assert.AreSame(target.Encoding, terminatingWriter.Encoding);
+		Assert.AreEqual(NewLines.CrLf, target.NewLine, "The wrapper's terminator must not leak into the wrapped writer.");
 	}
 }

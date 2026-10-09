@@ -79,7 +79,8 @@ The library is built around these types:
 1. **`CodeBlocker`** (`CodeBlocker/CodeBlocker.cs`): Wraps `System.CodeDom.Compiler.IndentedTextWriter` to provide simplified code generation with:
    - Factory methods (`Create()`, `Create(string indentString)`) that manage `StringWriter` lifecycle
    - Constructors over any `TextWriter`, for streaming straight to a file — such a writer stays the
-     caller's to dispose, and `IsBuffered`/`ToString()` only work over a `StringWriter`
+     caller's to dispose, its `NewLine` is never changed (the terminator lives on a private
+     forwarding writer), and `IsBuffered`/`ToString()` only work over a `StringWriter`
    - Indentation control via `Indent()`, `Outdent()`, and `CurrentIndent` property
    - Output methods: `Write()`, `WriteLine()`, `NewLine()`
    - Implements `IDisposable` with proper resource cleanup
