@@ -440,6 +440,27 @@ public sealed class TemplateTests
 		Assert.Contains("Value", exception.Message);
 	}
 
+	[TestMethod]
+	public void ARejectedPropertyWritesNothing()
+	{
+		// The declaration used to be written before the check, so a caller that caught the
+		// exception and carried on was left with "public int Foo" and no terminator.
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "Foo",
+			Keywords = { "public" },
+			Attributes = { "Obsolete" },
+			Documentation = new DocComment { Summary = "Foo." },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
 	#endregion
 
 	#region MethodTemplate
@@ -731,6 +752,25 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			"public static Money operator +(Money left, Money right) => new(left.Amount + right.Amount);\n",
 			Render(op));
+	}
+
+	[TestMethod]
+	public void AnOperatorOfUnknownKindWritesNothing()
+	{
+		OperatorTemplate unknown = new()
+		{
+			Kind = (OperatorKind)99,
+			Type = "Money",
+			Symbol = "+",
+			Keywords = { "public", "static" },
+			Attributes = { "Obsolete" },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => unknown.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
 	[TestMethod]

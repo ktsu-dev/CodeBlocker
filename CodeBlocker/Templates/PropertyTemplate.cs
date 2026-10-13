@@ -40,13 +40,29 @@ public class PropertyTemplate : MemberTemplate
 	/// An expression body is written on the declaration line. Otherwise, accessors that are all
 	/// automatic and unqualified collapse to <c>{ get; set; }</c> on one line, with any
 	/// <see cref="TemplateBase.DefaultValue"/> as its initialiser; anything else gets a braced
-	/// accessor list. A property with no accessors at all is declared and terminated with a
-	/// semicolon, which is what an abstract or interface property looks like.
+	/// accessor list. A property with no accessors and no expression body is rejected before
+	/// anything is written, so a caller that catches the exception can keep using
+	/// <paramref name="codeBlocker"/>.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// <see cref="Getter"/>, <see cref="Setter"/> and <see cref="ExpressionBodyFactory"/> are all
+	/// <see langword="null"/>.
+	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
+
+		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
+		{
+			// Writing "Type Name;" here would emit a field, not a property — which is what an
+			// accessorless property used to render as. An abstract or interface property is
+			// spelled with accessors that have no body: Getter = AccessorTemplate.Auto().
+			// Checked before the declaration is written, which would otherwise be left unfinished.
+			throw new InvalidOperationException(
+				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
+				"Setter, or ExpressionBodyFactory.");
+		}
 
 		base.WriteTo(codeBlocker);
 
@@ -54,16 +70,6 @@ public class PropertyTemplate : MemberTemplate
 		{
 			TemplateRendering.WriteExpressionBody(codeBlocker, ExpressionBodyFactory);
 			return;
-		}
-
-		if (Getter is null && Setter is null)
-		{
-			// Writing "Type Name;" here would emit a field, not a property — which is what an
-			// accessorless property used to render as. An abstract or interface property is
-			// spelled with accessors that have no body: Getter = AccessorTemplate.Auto().
-			throw new InvalidOperationException(
-				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
-				"Setter, or ExpressionBodyFactory.");
 		}
 
 		if (CanUseShorthand)
