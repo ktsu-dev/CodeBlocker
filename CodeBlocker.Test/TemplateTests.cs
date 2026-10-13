@@ -2,6 +2,7 @@
 
 namespace CodeBlocker.Tests;
 
+using System.Text;
 using ktsu.CodeBlocker;
 using ktsu.CodeBlocker.Templates;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -47,6 +48,31 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			$"string name = {expectedLiteral}",
 			Render(new ParameterTemplate { Type = "string", Name = "name", DefaultValue = value, DefaultValueIsQuoted = true }));
+
+	[TestMethod]
+	public void ParameterEscapesALoneSurrogateInAQuotedDefaultValue()
+	{
+		// These are built in code rather than passed through DataRow: an attribute argument is
+		// stored as UTF-8, which cannot carry a lone surrogate either.
+		(string Value, string ExpectedLiteral)[] cases =
+		[
+			("a\uD800b", @"""a\ud800b"""),
+			("a\uDC00b", @"""a\udc00b"""),
+			("end\uD83D", @"""end\ud83d"""),
+			("\uDE00start", @"""\ude00start"""),
+			("\uDE00\uD83D", @"""\ude00\ud83d"""),
+			("pair \uD83D\uDE00", "\"pair \uD83D\uDE00\""),
+		];
+
+		UTF8Encoding strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+		foreach ((string value, string expectedLiteral) in cases)
+		{
+			string rendered = Render(new ParameterTemplate { Type = "string", Name = "name", DefaultValue = value, DefaultValueIsQuoted = true });
+
+			Assert.AreEqual($"string name = {expectedLiteral}", rendered);
+			_ = strictUtf8.GetBytes(rendered);
+		}
+	}
 
 	[TestMethod]
 	public void ParameterKeepsItsAttributesOnTheDeclarationLine()
