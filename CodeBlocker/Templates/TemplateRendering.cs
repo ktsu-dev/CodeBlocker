@@ -125,15 +125,18 @@ internal static class TemplateRendering
 	/// <returns>The quoted literal.</returns>
 	/// <remarks>
 	/// Backslashes, quotes and the common control characters take their short escapes; any other
-	/// control character, and the line and paragraph separators the compiler also treats as line
-	/// breaks, take a <c>\uXXXX</c> escape.
+	/// control character, the line and paragraph separators the compiler also treats as line
+	/// breaks, and any surrogate that is not half of a valid pair take a <c>\uXXXX</c> escape. A
+	/// lone surrogate has no UTF-8 encoding, so written raw it would make the generated file
+	/// impossible to save faithfully: a strict encoder throws and a replacing one changes the value.
 	/// </remarks>
 	internal static string QuoteStringLiteral(string value)
 	{
 		StringBuilder literal = new(value.Length + 2);
 		literal.Append('"');
-		foreach (char c in value)
+		for (int i = 0; i < value.Length; i++)
 		{
+			char c = value[i];
 			string? escape = c switch
 			{
 				'\\' => @"\\",
@@ -146,7 +149,7 @@ internal static class TemplateRendering
 				'\r' => @"\r",
 				'\t' => @"\t",
 				'\v' => @"\v",
-				_ when char.IsControl(c) || c is '\u2028' or '\u2029' =>
+				_ when char.IsControl(c) || c is '\u2028' or '\u2029' || IsLoneSurrogate(value, i) =>
 					@"\u" + ((int)c).ToString("x4", CultureInfo.InvariantCulture),
 				_ => null,
 			};
@@ -163,6 +166,29 @@ internal static class TemplateRendering
 
 		literal.Append('"');
 		return literal.ToString();
+	}
+
+	/// <summary>
+	/// Reports whether the character at <paramref name="index"/> is a surrogate that is not half of
+	/// a high-low pair.
+	/// </summary>
+	/// <param name="value">The text.</param>
+	/// <param name="index">The position of the character to test.</param>
+	/// <returns><see langword="true"/> for an unpaired surrogate; otherwise <see langword="false"/>.</returns>
+	private static bool IsLoneSurrogate(string value, int index)
+	{
+		char c = value[index];
+		if (char.IsHighSurrogate(c))
+		{
+			return index + 1 >= value.Length || !char.IsLowSurrogate(value[index + 1]);
+		}
+
+		if (char.IsLowSurrogate(c))
+		{
+			return index == 0 || !char.IsHighSurrogate(value[index - 1]);
+		}
+
+		return false;
 	}
 
 	/// <summary>
