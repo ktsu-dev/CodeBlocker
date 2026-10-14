@@ -75,6 +75,23 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void EveryLineTerminatorTheCompilerRecognisesStartsANewCommentLine(string separator)
+	{
+		// The compiler ends a /// comment at each of these, so text after one left inside a line is
+		// parsed as code and the generated file does not compile.
+		string rendered = Render(new DocComment { Summary = $"Line one{separator}Line two" });
+
+		Assert.AreEqual(Render(new DocComment { Summary = "Line one\nLine two" }), rendered);
+		foreach (string line in rendered.Split('\n', '\r', '\u0085', '\u2028', '\u2029'))
+		{
+			Assert.IsTrue(line.Length == 0 || line.StartsWith("///", StringComparison.Ordinal), $"Not inside the comment: \"{line}\"");
+		}
+	}
+
+	[TestMethod]
 	public void TextContentIsEscapedByDefault()
 	{
 		// "values in the range <0, 1>" is an entirely ordinary thing for metadata to say, and it
