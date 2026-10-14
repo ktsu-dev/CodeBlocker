@@ -59,31 +59,27 @@ public class OperatorTemplate : MemberTemplate
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// <see cref="Kind"/> is not an <see cref="OperatorKind"/> value. Nothing is written.
+	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
+		// Worked out before anything is written, so an unknown kind cannot leave a half-written
+		// declaration behind.
+		string signature = Kind switch
+		{
+			OperatorKind.Normal => $"{Type} operator {Symbol}",
+			OperatorKind.Implicit => $"implicit operator {Type}",
+			OperatorKind.Explicit => $"explicit operator {Type}",
+			_ => throw new InvalidOperationException($"Unknown operator kind '{Kind}'."),
+		};
+
 		// Not through the MemberTemplate implementation: an operator's signature is its symbol and
 		// result type, not a type followed by a name.
 		codeBlocker.AddTemplate(this);
-
-		switch (Kind)
-		{
-			case OperatorKind.Normal:
-				codeBlocker.Write($"{Type} operator {Symbol}");
-				break;
-
-			case OperatorKind.Implicit:
-				codeBlocker.Write($"implicit operator {Type}");
-				break;
-
-			case OperatorKind.Explicit:
-				codeBlocker.Write($"explicit operator {Type}");
-				break;
-
-			default:
-				throw new InvalidOperationException($"Unknown operator kind '{Kind}'.");
-		}
+		codeBlocker.Write(signature);
 
 		TemplateRendering.WriteParameterList(codeBlocker, Parameters);
 		TemplateRendering.WriteBody(codeBlocker, BodyFactory);
