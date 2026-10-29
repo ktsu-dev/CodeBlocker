@@ -77,9 +77,14 @@ public class AccessorTemplate
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <param name="keyword">The accessor keyword: <c>get</c>, <c>set</c> or <c>init</c>.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// <see cref="Kind"/> is not a known kind, or is <see cref="AccessorKind.Expression"/> with no
+	/// <see cref="BodyFactory"/>. Nothing is written.
+	/// </exception>
 	public void WriteTo(CodeBlocker codeBlocker, string keyword)
 	{
 		Ensure.NotNull(codeBlocker);
+		Validate();
 
 		string prefix = string.IsNullOrEmpty(Modifier) ? keyword : $"{Modifier} {keyword}";
 
@@ -105,6 +110,27 @@ public class AccessorTemplate
 
 			default:
 				throw new InvalidOperationException($"Unknown accessor kind '{Kind}'.");
+		}
+	}
+
+	/// <summary>
+	/// Throws when the accessor cannot be written, so a caller can check before writing anything.
+	/// </summary>
+	/// <exception cref="InvalidOperationException">
+	/// <see cref="Kind"/> is not a known kind, or is <see cref="AccessorKind.Expression"/> with no
+	/// <see cref="BodyFactory"/>, which would render as <c>get =&gt; ;</c>.
+	/// </exception>
+	internal void Validate()
+	{
+		if (Kind is not (AccessorKind.Auto or AccessorKind.Expression or AccessorKind.Block))
+		{
+			throw new InvalidOperationException($"Unknown accessor kind '{Kind}'.");
+		}
+
+		if (Kind == AccessorKind.Expression && BodyFactory is null)
+		{
+			throw new InvalidOperationException(
+				"An expression-bodied accessor needs a BodyFactory to write its expression.");
 		}
 	}
 
