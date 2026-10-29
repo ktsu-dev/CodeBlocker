@@ -262,13 +262,20 @@ public class CodeBlocker : IDisposable
 	/// Write a line of code with indentation.
 	/// </summary>
 	/// <param name="text">The text to write.</param>
+	/// <remarks>
+	/// Writing an empty or null string does nothing. In particular it does not consume the
+	/// indentation pending at the start of a line, which would leave it on the blank line a
+	/// following <see cref="NewLine"/> writes and drop the line after that to column 0.
+	/// </remarks>
 	public void Write(string text)
 	{
-		IndentedTextWriter.Write(text);
-		if (!string.IsNullOrEmpty(text))
+		if (string.IsNullOrEmpty(text))
 		{
-			isMidLine = true;
+			return;
 		}
+
+		IndentedTextWriter.Write(text);
+		isMidLine = true;
 	}
 
 	/// <summary>
