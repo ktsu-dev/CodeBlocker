@@ -425,6 +425,67 @@ public sealed class TemplateTests
 		Assert.AreEqual("public int X => ;\n", Render(property));
 	}
 
+	private static string RenderExpressionBody(Action<CodeBlocker> expressionFactory) =>
+		Render(new PropertyTemplate { Type = "int", Name = "X", Keywords = { "public" }, ExpressionBodyFactory = expressionFactory });
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInALineCommentGetsItsSemicolonBeforeTheComment() =>
+		Assert.AreEqual(
+			"public int X => x; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("x // c")));
+
+	[TestMethod]
+	public void ASwitchExpressionEndingInALineCommentGetsItsSemicolonAfterTheBrace() =>
+		Assert.AreEqual(
+			"public int X => v switch\n{\n\t_ => 1,\n}; // c\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("v switch");
+				codeBlocker.WriteLine("{");
+				codeBlocker.WriteLine("\t_ => 1,");
+				codeBlocker.Write("} // c");
+			}));
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInACommentOnlyLineKeepsItsSemicolonOnTheLastLineOfCode() =>
+		Assert.AreEqual(
+			"public int X => x;\n// why\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("x");
+				codeBlocker.Write("// why");
+			}));
+
+	[TestMethod]
+	public void ASlashPairInsideAStringLiteralIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => \"http://x\";\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("\"http://x\"")));
+
+	[TestMethod]
+	public void ASlashPairInsideAVerbatimStringOpenedOnAnEarlierLineIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => @\"a\n// b\";\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("@\"a");
+				codeBlocker.Write("// b\"");
+			}));
+
+	[TestMethod]
+	public void AnExpressionBodiedAccessorEndingInALineCommentGetsItsSemicolonBeforeTheComment()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "X",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Expression(codeBlocker => codeBlocker.Write("x // c")),
+		};
+
+		Assert.AreEqual("public int X\n{\n\tget => x; // c\n}\n", Render(property));
+	}
+
 	[TestMethod]
 	public void ABlockBodiedAccessorIsBracedAndIndented()
 	{

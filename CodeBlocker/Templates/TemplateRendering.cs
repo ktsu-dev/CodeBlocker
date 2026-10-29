@@ -319,8 +319,9 @@ internal static class TemplateRendering
 	/// The first line of the expression stays on the declaration line, after the arrow, and every
 	/// following line is spliced at the current indent, so a multi-line switch expression, collection
 	/// expression or initialiser keeps the nesting it was written with. The semicolon goes on the last
-	/// line that has content, so a factory that ends with a line terminator does not leave it on a
-	/// line of its own.
+	/// line that has code, so a factory that ends with a line terminator does not leave it on a line
+	/// of its own. A line comment there keeps the semicolon in front of it, and a line holding only a
+	/// comment is not code, so the semicolon never ends up inside a comment.
 	/// </remarks>
 	internal static void WriteExpressionBody(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory)
 	{
@@ -347,11 +348,18 @@ internal static class TemplateRendering
 			return;
 		}
 
+		int[] codeEnds = FindCodeEnds(lines);
+		int terminated = last;
+		while (terminated > first && string.IsNullOrWhiteSpace(lines[terminated][..codeEnds[terminated]]))
+		{
+			terminated--;
+		}
+
 		for (int i = first; i <= last; i++)
 		{
-			if (i == last)
+			if (i == terminated)
 			{
-				codeBlocker.WriteLine(lines[i] + ";");
+				codeBlocker.WriteLine(Terminate(lines[i], codeEnds[i]));
 			}
 			else if (lines[i].Length == 0)
 			{
@@ -362,5 +370,59 @@ internal static class TemplateRendering
 				codeBlocker.WriteLine(lines[i]);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Finds where the code on each line ends: at the start of the line comment the line ends in,
+	/// or at the end of the line when it has none.
+	/// </summary>
+	/// <param name="lines">The lines of a fragment, as <see cref="SplitLines"/> returns them.</param>
+	/// <returns>One position per line, relative to the start of that line.</returns>
+	/// <remarks>
+	/// The lines are scanned together rather than one at a time, so a <c>//</c> on a line that a
+	/// literal or block comment opened on an earlier line is not taken for a comment.
+	/// </remarks>
+	private static int[] FindCodeEnds(string[] lines)
+	{
+		int[] codeEnds = new int[lines.Length];
+		int[] lineStarts = new int[lines.Length];
+		int offset = 0;
+		for (int i = 0; i < lines.Length; i++)
+		{
+			lineStarts[i] = offset;
+			codeEnds[i] = lines[i].Length;
+			offset += lines[i].Length + 1;
+		}
+
+		int line = 0;
+		foreach (int commentStart in VerbatimStringScanner.FindLineComments(string.Join("\n", lines)))
+		{
+			while (line + 1 < lines.Length && lineStarts[line + 1] <= commentStart)
+			{
+				line++;
+			}
+
+			codeEnds[line] = Math.Min(codeEnds[line], commentStart - lineStarts[line]);
+		}
+
+		return codeEnds;
+	}
+
+	/// <summary>
+	/// Puts the terminating semicolon on a line, after its code and before any line comment.
+	/// </summary>
+	/// <param name="line">The line to terminate.</param>
+	/// <param name="codeEnd">Where the code on the line ends, as <see cref="FindCodeEnds"/> found.</param>
+	/// <returns>The line with its semicolon.</returns>
+	private static string Terminate(string line, int codeEnd)
+	{
+		if (codeEnd == line.Length)
+		{
+			return line + ";";
+		}
+
+		string code = line[..codeEnd];
+		string trimmed = code.TrimEnd();
+		return trimmed + ";" + code[trimmed.Length..] + line[codeEnd..];
 	}
 }
