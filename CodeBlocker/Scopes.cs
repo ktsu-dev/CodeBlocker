@@ -105,12 +105,21 @@ public class IndentScope(CodeBlocker codeBlocker)
 /// </remarks>
 /// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
 /// <param name="name">The region name.</param>
+/// <exception cref="ArgumentException">
+/// <paramref name="name"/> contains a line terminator, which would leave the rest of the name outside
+/// the directive. Nothing is written.
+/// </exception>
 public class RegionScope(CodeBlocker codeBlocker, string name)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, name), onClose: () => End(codeBlocker))
 {
 	private static void Begin(CodeBlocker codeBlocker, string name)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (name is not null && LineTerminators.Contains(name))
+		{
+			throw new ArgumentException("A region name must fit on the #region line.", nameof(name));
+		}
+
 		codeBlocker.WriteLine(string.IsNullOrEmpty(name) ? "#region" : $"#region {name}");
 	}
 

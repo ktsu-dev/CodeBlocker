@@ -91,6 +91,22 @@ public sealed class ScopesTests
 	}
 
 	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\r", DisplayName = "CR")]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void RegionScopeRejectsANameThatSpansLinesBeforeWriting(string terminator)
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		Assert.ThrowsExactly<ArgumentException>(() => new RegionScope(codeBlocker, $"a{terminator}b"));
+
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void DirectiveScopeWrapsTheBodyInAConditional()
 	{
 		using CodeBlocker codeBlocker = Create();
