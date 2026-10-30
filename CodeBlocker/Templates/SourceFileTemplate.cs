@@ -39,6 +39,13 @@ public static class SourceFileTemplateExtensions
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <param name="template">The file to write.</param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
+	/// <remarks>
+	/// The only attributes a file can carry are global ones (<c>assembly:</c>, <c>module:</c>), and
+	/// C# only accepts them after every using directive and before the namespace. So when the file
+	/// has attributes, its usings come first, then the attributes, then the namespace; that is the one
+	/// order in which an attribute can be named through the file's own usings. A file with no
+	/// attributes keeps the usings inside its file-scoped namespace.
+	/// </remarks>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="codeBlocker"/> or <paramref name="template"/> is <see langword="null"/>.
 	/// </exception>
@@ -47,9 +54,23 @@ public static class SourceFileTemplateExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(template);
 
-		codeBlocker.AddTemplate(template);
-		codeBlocker.WriteFileScopedNamespace(template.Namespace);
-		codeBlocker.WriteUsings(template.Usings);
+		codeBlocker.AddDocumentation(template.Documentation);
+		codeBlocker.AddComments(template.Comments);
+		if (template.Attributes.Count > 0)
+		{
+			codeBlocker.WriteUsings(template.Usings);
+			codeBlocker.AddAttributes(template.Attributes);
+			codeBlocker.NewLine();
+			codeBlocker.AddKeywords(template.Keywords);
+			codeBlocker.WriteFileScopedNamespace(template.Namespace);
+		}
+		else
+		{
+			codeBlocker.AddKeywords(template.Keywords);
+			codeBlocker.WriteFileScopedNamespace(template.Namespace);
+			codeBlocker.WriteUsings(template.Usings);
+		}
+
 		codeBlocker.AddClasses(template.Classes);
 		return codeBlocker;
 	}

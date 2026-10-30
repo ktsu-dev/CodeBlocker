@@ -1094,6 +1094,37 @@ public sealed class TemplateTests
 			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
 	}
 
+	[TestMethod]
+	public void ASourceFileWritesItsGlobalAttributesAfterItsUsingsAndBeforeItsNamespace()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System" },
+			Attributes = { "assembly: CLSCompliant(true)" },
+			Classes = { new ClassTemplate { Name = "Widget", Keywords = { "public" } } },
+		};
+
+		Assert.AreEqual(
+			"using System;\n\n[assembly: CLSCompliant(true)]\n\nnamespace Contoso;\n\npublic class Widget\n{\n}\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
+	public void ASourceFileWithNoNamespaceWritesItsGlobalAttributesAfterItsUsings()
+	{
+		SourceFileTemplate file = new()
+		{
+			Usings = { "System" },
+			Attributes = { "assembly: CLSCompliant(true)" },
+			Classes = { new ClassTemplate { Name = "Widget", Keywords = { "public" } } },
+		};
+
+		Assert.AreEqual(
+			"using System;\n\n[assembly: CLSCompliant(true)]\n\npublic class Widget\n{\n}\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
 	#endregion
 
 	#region Null handling
