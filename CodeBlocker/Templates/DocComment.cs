@@ -202,7 +202,7 @@ public class DocComment
 	/// <param name="text">The element's content.</param>
 	private void WriteNamedElement(CodeBlocker codeBlocker, string tagName, string? attributes, string? text)
 	{
-		string[] lines = SplitLines(text ?? string.Empty);
+		string[] lines = LineTerminators.Split(text ?? string.Empty);
 		if (lines.Length == 1)
 		{
 			codeBlocker.WriteLine($"/// <{tagName}{attributes}>{Escape(lines[0])}</{tagName}>");
@@ -219,19 +219,6 @@ public class DocComment
 	}
 
 	private string Escape(string text) => EscapeText ? EscapeContent(text) : text;
-
-	/// <summary>
-	/// Splits text into lines at every terminator the C# compiler recognises: either platform's
-	/// line ending, so that a caller's verbatim or raw string literal lays out the same way
-	/// whichever platform the source file was written on, and also NEL (U+0085), LINE SEPARATOR
-	/// (U+2028) and PARAGRAPH SEPARATOR (U+2029). The compiler ends a <c>///</c> comment at any of
-	/// those, so left inside a line they would push the rest of the text out of the comment and
-	/// into the code.
-	/// </summary>
-	/// <param name="text">The text to split.</param>
-	/// <returns>The text's lines.</returns>
-	private static string[] SplitLines(string text) =>
-		text.Replace("\r\n", "\n").Split('\n', '\r', '\u0085', '\u2028', '\u2029');
 
 	/// <summary>
 	/// Escapes the characters that would otherwise be read as markup in element content.
