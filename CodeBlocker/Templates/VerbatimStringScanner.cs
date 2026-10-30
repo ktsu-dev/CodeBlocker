@@ -29,19 +29,48 @@ internal static class VerbatimStringScanner
 	{
 		bool[] inVerbatimText = new bool[text.Length];
 		int position = 0;
-		ScanCode(text, ref position, inVerbatimText, isInterpolationHole: false);
+		ScanCode(text, ref position, inVerbatimText, lineCommentStarts: null);
 		return inVerbatimText;
+	}
+
+	/// <summary>
+	/// Finds the line comments in <paramref name="text"/> that belong to the code itself.
+	/// </summary>
+	/// <param name="text">The C# fragment to scan.</param>
+	/// <returns>
+	/// The position of the first <c>/</c> of each such <c>//</c> comment, in order. A <c>//</c>
+	/// inside a string or character literal, a block comment or an interpolation hole is not one.
+	/// </returns>
+	internal static List<int> FindLineComments(string text)
+	{
+		List<int> lineCommentStarts = [];
+		int position = 0;
+		ScanCode(text, ref position, new bool[text.Length], lineCommentStarts);
+		return lineCommentStarts;
 	}
 
 	/// <summary>
 	/// Walks code up to the end of <paramref name="text"/> or, inside an interpolation hole, up to
 	/// the brace that closes the hole, which is left for the caller to consume.
 	/// </summary>
-	private static void ScanCode(string text, ref int position, bool[] inVerbatimText, bool isInterpolationHole)
+	/// <param name="text">The C# fragment to scan.</param>
+	/// <param name="position">Where to start, and on return where the walk stopped.</param>
+	/// <param name="inVerbatimText">Receives the verbatim literal flags.</param>
+	/// <param name="lineCommentStarts">
+	/// Receives the start of each line comment, at the top level only; <see langword="null"/> when
+	/// they are not wanted, and for an interpolation hole.
+	/// </param>
+	/// <param name="isInterpolationHole">Whether the walk is inside an interpolation hole.</param>
+	private static void ScanCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool isInterpolationHole = false)
 	{
 		int braceDepth = 0;
 		while (position < text.Length)
 		{
+			if (lineCommentStarts is not null && text[position] == '/' && At(text, position + 1) == '/')
+			{
+				lineCommentStarts.Add(position);
+			}
+
 			if (TrySkipCommentOrLiteral(text, ref position, inVerbatimText))
 			{
 				continue;
@@ -314,7 +343,7 @@ internal static class VerbatimStringScanner
 	private static void SkipInterpolationHole(string text, ref int position, bool[] inVerbatimText)
 	{
 		position++;
-		ScanCode(text, ref position, inVerbatimText, isInterpolationHole: true);
+		ScanCode(text, ref position, inVerbatimText, lineCommentStarts: null, isInterpolationHole: true);
 		if (position < text.Length)
 		{
 			position++;
