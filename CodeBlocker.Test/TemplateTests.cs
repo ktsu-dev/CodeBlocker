@@ -548,6 +548,44 @@ public sealed class TemplateTests
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
+	[TestMethod]
+	public void APropertyWithAnAccessorOfUnknownKindWritesNothing()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Auto(),
+			Setter = new AccessorTemplate { Kind = (AccessorKind)99 },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionAccessorWithNoBodyIsRejectedBeforeAnythingIsWritten()
+	{
+		// It used to render "get => ;", which does not compile, and raise nothing.
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			Keywords = { "public" },
+			Getter = new AccessorTemplate { Kind = AccessorKind.Expression },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
 	#endregion
 
 	#region MethodTemplate
@@ -857,6 +895,24 @@ public sealed class TemplateTests
 		codeBlocker.WriteLine("int a;");
 
 		Assert.ThrowsExactly<InvalidOperationException>(() => unknown.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AClassOfUnknownKindWritesNothing()
+	{
+		ClassTemplate unknown = new()
+		{
+			Kind = (TypeKind)99,
+			Name = "C",
+			Keywords = { "public" },
+			Attributes = { "Obsolete" },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => unknown.WriteTo(codeBlocker));
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 

@@ -40,14 +40,15 @@ public class PropertyTemplate : MemberTemplate
 	/// An expression body is written on the declaration line. Otherwise, accessors that are all
 	/// automatic and unqualified collapse to <c>{ get; set; }</c> on one line, with any
 	/// <see cref="TemplateBase.DefaultValue"/> as its initialiser; anything else gets a braced
-	/// accessor list. A property with no accessors and no expression body is rejected before
-	/// anything is written, so a caller that catches the exception can keep using
-	/// <paramref name="codeBlocker"/>.
+	/// accessor list. A property with no accessors and no expression body, or with an accessor that
+	/// cannot be written, is rejected before anything is written, so a caller that catches the
+	/// exception can keep using <paramref name="codeBlocker"/>.
 	/// </remarks>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">
 	/// <see cref="Getter"/>, <see cref="Setter"/> and <see cref="ExpressionBodyFactory"/> are all
-	/// <see langword="null"/>.
+	/// <see langword="null"/>; or, with no expression body, an accessor's kind is unknown, or is
+	/// <see cref="AccessorKind.Expression"/> with no <see cref="AccessorTemplate.BodyFactory"/>.
 	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
@@ -62,6 +63,13 @@ public class PropertyTemplate : MemberTemplate
 			throw new InvalidOperationException(
 				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
 				"Setter, or ExpressionBodyFactory.");
+		}
+
+		if (ExpressionBodyFactory is null)
+		{
+			// Likewise checked up front: the accessor list is only reached after "Type Name {".
+			Getter?.Validate();
+			Setter?.Validate();
 		}
 
 		base.WriteTo(codeBlocker);

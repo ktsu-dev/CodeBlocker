@@ -60,13 +60,19 @@ public class ClassTemplate : TemplateBase
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <see cref="Kind"/> is not a known kind. Nothing is written.
+	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
+		// Resolved before the doc comment, attributes and modifiers are written, so an unknown kind
+		// does not leave them behind as an unfinished declaration.
+		string keyword = TypeKindKeywords.For(Kind);
 		base.WriteTo(codeBlocker);
 
-		codeBlocker.Write($"{TypeKindKeywords.For(Kind)} {Name}");
+		codeBlocker.Write($"{keyword} {Name}");
 		TemplateRendering.WriteTypeParameterList(codeBlocker, TypeParameters);
 
 		if (PositionalParameters.Count > 0)
