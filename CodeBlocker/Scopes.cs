@@ -140,12 +140,27 @@ public class RegionScope(CodeBlocker codeBlocker, string name)
 /// </remarks>
 /// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
 /// <param name="condition">The condition expression, for example <c>NET8_0_OR_GREATER</c>.</param>
+/// <exception cref="ArgumentException">
+/// <paramref name="condition"/> is null, empty or whitespace, which would write a bare <c>#if</c>, or
+/// contains a line terminator, which would leave the rest of the condition outside the directive.
+/// Nothing is written.
+/// </exception>
 public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, condition), onClose: () => End(codeBlocker))
 {
 	private static void Begin(CodeBlocker codeBlocker, string condition)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (string.IsNullOrWhiteSpace(condition))
+		{
+			throw new ArgumentException("A conditional directive needs a condition.", nameof(condition));
+		}
+
+		if (LineTerminators.Contains(condition))
+		{
+			throw new ArgumentException("A condition must fit on the #if line.", nameof(condition));
+		}
+
 		codeBlocker.WriteLine($"#if {condition}");
 	}
 
@@ -171,6 +186,10 @@ public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 /// identifier such as <c>CS1591</c> or a comma-separated list. Empty or whitespace warnings are a
 /// no-op and emit no directives.
 /// </param>
+/// <exception cref="ArgumentException">
+/// <paramref name="warnings"/> contains a line terminator, which would leave the rest of the list
+/// outside the directive. Nothing is written.
+/// </exception>
 public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, warnings), onClose: () => End(codeBlocker, warnings))
 {
@@ -190,6 +209,11 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 		if (string.IsNullOrWhiteSpace(warnings))
 		{
 			return;
+		}
+
+		if (LineTerminators.Contains(warnings))
+		{
+			throw new ArgumentException("A warning list must fit on the #pragma line.", nameof(warnings));
 		}
 
 		codeBlocker.WriteLine($"#pragma warning disable {warnings}");
