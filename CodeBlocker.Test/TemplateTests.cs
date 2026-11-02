@@ -649,6 +649,71 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void ABodyThatWritesOnlyALineCommentIsBraced() =>
+		// "void M() // nothing to reset" has no body at all (CS1002).
+		Assert.AreEqual(
+			"void M()\n{\n\t// nothing to reset\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("// nothing to reset"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyLineCommentsIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t// a\n\t// b\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("// a");
+					codeBlocker.WriteLine("// b");
+				},
+			}));
+
+	[TestMethod]
+	public void AConstructorBodyThatWritesOnlyALineCommentIsBraced() =>
+		Assert.AreEqual(
+			"C()\n{\n\t// no state\n}\n",
+			Render(new ConstructorTemplate
+			{
+				Name = "C",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("// no state"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyAnEmptyPragmaScopeIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t#pragma warning disable CS0168\n\t#pragma warning restore CS0168\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					using PragmaScope pragma = new(codeBlocker, "CS0168");
+				},
+			}));
+
+	[TestMethod]
+	[DataRow("=> x;")]
+	[DataRow("{ }")]
+	[DataRow("=> x; // trailing")]
+	public void AOneLineBodyWithCodeStaysOnTheDeclarationLine(string body) =>
+		Assert.AreEqual(
+			$"int M() {body}\n",
+			Render(new MethodTemplate
+			{
+				Type = "int",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine(body),
+			}));
+
+	[TestMethod]
 	public void AnExpressionBodyBetweenBlankLinesStaysOnTheDeclarationLine() =>
 		Assert.AreEqual(
 			"public void Reset() => count = 0;\n",

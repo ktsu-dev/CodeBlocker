@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2026 ktsu-dev contributors
+﻿// Copyright (c) 2023-2026 ktsu-dev contributors
 
 namespace ktsu.CodeBlocker.Templates;
 
@@ -294,6 +294,20 @@ internal static class TemplateRendering
 			return;
 		}
 
+		// A comment or a directive is not a body either: written after the declaration it leaves the
+		// member with none, so a body made only of them is wrapped in braces instead. A generator
+		// writing "// no fields to reset" in place of an empty loop would otherwise emit CS1002.
+		if (!HasCode(lines))
+		{
+			codeBlocker.WriteLine();
+			using (new Scope(codeBlocker))
+			{
+				SpliceFragment(codeBlocker, body);
+			}
+
+			return;
+		}
+
 		if (contentLines.Length == 1)
 		{
 			// An expression body stays on the declaration line.
@@ -370,6 +384,27 @@ internal static class TemplateRendering
 				codeBlocker.WriteLine(lines[i]);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Reports whether any line of a fragment holds code: something other than a line comment or a
+	/// preprocessor directive.
+	/// </summary>
+	/// <param name="lines">The lines of a fragment, as <see cref="SplitLines"/> returns them.</param>
+	/// <returns><see langword="true"/> if at least one line has code on it.</returns>
+	private static bool HasCode(string[] lines)
+	{
+		int[] codeEnds = FindCodeEnds(lines);
+		for (int i = 0; i < lines.Length; i++)
+		{
+			string code = lines[i][..codeEnds[i]].Trim();
+			if (code.Length != 0 && code[0] != '#')
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/// <summary>
