@@ -341,25 +341,49 @@ internal static class TemplateRendering
 			first++;
 		}
 
-		codeBlocker.Write(" => ");
 		if (last < 0)
 		{
-			codeBlocker.WriteLine(";");
+			codeBlocker.WriteLine(" => ;");
 			return;
+		}
+
+		// A directive must be the first thing on its line (CS1040), so one that opens the
+		// expression goes on the line after the arrow rather than on the declaration line.
+		if (IsDirective(lines[first]))
+		{
+			codeBlocker.WriteLine(" =>");
+		}
+		else
+		{
+			codeBlocker.Write(" => ");
 		}
 
 		int[] codeEnds = FindCodeEnds(lines);
 		int terminated = last;
-		while (terminated > first && string.IsNullOrWhiteSpace(lines[terminated][..codeEnds[terminated]]))
+		while (terminated > first && !IsCode(terminated))
 		{
 			terminated--;
 		}
 
+		// When a directive follows the last line of code, that line may sit in one branch of an
+		// #if, and terminating it would leave every other branch unterminated. The semicolon then
+		// goes on a line of its own after the last directive, where every branch reaches it.
+		bool directiveFollows = false;
+		for (int i = terminated + 1; i <= last; i++)
+		{
+			directiveFollows |= IsDirective(lines[i]);
+		}
+
 		for (int i = first; i <= last; i++)
 		{
-			if (i == terminated)
+			if (i == terminated && !directiveFollows)
 			{
 				codeBlocker.WriteLine(Terminate(lines[i], codeEnds[i]));
+			}
+			else if (i == last && directiveFollows)
+			{
+				codeBlocker.WriteLine(lines[i]);
+				codeBlocker.WriteLine(";");
 			}
 			else if (lines[i].Length == 0)
 			{
@@ -370,6 +394,14 @@ internal static class TemplateRendering
 				codeBlocker.WriteLine(lines[i]);
 			}
 		}
+
+		bool IsCode(int i)
+		{
+			string code = lines[i][..codeEnds[i]].Trim();
+			return code.Length != 0 && code[0] != '#';
+		}
+
+		static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
 	}
 
 	/// <summary>
