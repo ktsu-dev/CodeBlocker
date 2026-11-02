@@ -359,31 +359,12 @@ internal static class TemplateRendering
 		}
 
 		int[] codeEnds = FindCodeEnds(lines);
-		int terminated = last;
-		while (terminated > first && !IsCode(terminated))
-		{
-			terminated--;
-		}
-
-		// When a directive follows the last line of code, that line may sit in one branch of an
-		// #if, and terminating it would leave every other branch unterminated. The semicolon then
-		// goes on a line of its own after the last directive, where every branch reaches it.
-		bool directiveFollows = false;
-		for (int i = terminated + 1; i <= last; i++)
-		{
-			directiveFollows |= IsDirective(lines[i]);
-		}
-
+		int terminated = FindTerminatedLine(lines, codeEnds, first, last);
 		for (int i = first; i <= last; i++)
 		{
-			if (i == terminated && !directiveFollows)
+			if (i == terminated)
 			{
 				codeBlocker.WriteLine(Terminate(lines[i], codeEnds[i]));
-			}
-			else if (i == last && directiveFollows)
-			{
-				codeBlocker.WriteLine(lines[i]);
-				codeBlocker.WriteLine(";");
 			}
 			else if (lines[i].Length == 0)
 			{
@@ -395,14 +376,60 @@ internal static class TemplateRendering
 			}
 		}
 
-		bool IsCode(int i)
+		if (terminated < 0)
 		{
-			string code = lines[i][..codeEnds[i]].Trim();
-			return code.Length != 0 && code[0] != '#';
+			codeBlocker.WriteLine(";");
+		}
+	}
+
+	/// <summary>
+	/// Finds the line of an expression body that takes the terminating semicolon: the last line
+	/// with code on it, skipping lines that hold only a comment or a directive.
+	/// </summary>
+	/// <param name="lines">The lines of the expression, as <see cref="SplitLines"/> returns them.</param>
+	/// <param name="codeEnds">Where the code on each line ends, as <see cref="FindCodeEnds"/> found.</param>
+	/// <param name="first">The first line with content.</param>
+	/// <param name="last">The last line with content.</param>
+	/// <returns>
+	/// The line's index, or -1 when a directive follows it. That line may sit in one branch of an
+	/// <c>#if</c>, and terminating it would leave every other branch unterminated, so the semicolon
+	/// then goes on a line of its own after the last directive, where every branch reaches it.
+	/// </returns>
+	private static int FindTerminatedLine(string[] lines, int[] codeEnds, int first, int last)
+	{
+		int terminated = last;
+		while (terminated > first && !IsCode(lines[terminated][..codeEnds[terminated]]))
+		{
+			terminated--;
 		}
 
-		static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
+		for (int i = terminated + 1; i <= last; i++)
+		{
+			if (IsDirective(lines[i]))
+			{
+				return -1;
+			}
+		}
+
+		return terminated;
 	}
+
+	/// <summary>
+	/// Reports whether the code part of a line holds code: anything but whitespace or a
+	/// preprocessor directive.
+	/// </summary>
+	/// <param name="code">The line up to where its code ends.</param>
+	/// <returns><see langword="true"/> if the line has code on it.</returns>
+	private static bool IsCode(string code)
+	{
+		string trimmed = code.Trim();
+		return trimmed.Length != 0 && trimmed[0] != '#';
+	}
+
+	/// <summary>Reports whether a line is a preprocessor directive.</summary>
+	/// <param name="line">The line to check.</param>
+	/// <returns><see langword="true"/> if the line's first non-whitespace character is <c>#</c>.</returns>
+	private static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
 
 	/// <summary>
 	/// Finds where the code on each line ends: at the start of the line comment the line ends in,
