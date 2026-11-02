@@ -288,6 +288,39 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\r", DisplayName = "CR")]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void ALineBreakInAnAttributeValueIsRejectedBeforeWriting(string terminator)
+	{
+		string value = $"A{terminator}B";
+		DocComment[] comments =
+		[
+			new() { Summary = "s", SeeAlso = { value } },
+			new() { Summary = "s", InheritDoc = true, InheritDocCref = value },
+			new() { Summary = "s", Params = { new DocTag { Name = value, Text = "t" } } },
+			new() { Summary = "s", TypeParams = { new DocTag { Name = value, Text = "t" } } },
+			new() { Summary = "s", Exceptions = { new DocTag { Name = value, Text = "t" } } },
+		];
+
+		foreach (DocComment documentation in comments)
+		{
+			using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+			Assert.ThrowsExactly<ArgumentException>(() => documentation.WriteTo(codeBlocker));
+			Assert.AreEqual(string.Empty, codeBlocker.ToString(), "Nothing should be written before the check.");
+		}
+	}
+
+	[TestMethod]
+	public void AnUnusedInheritDocCrefIsNotChecked() =>
+		Assert.AreEqual(
+			"/// <summary>s</summary>\n",
+			Render(new DocComment { Summary = "s", InheritDocCref = "A\nB" }));
+
+	[TestMethod]
 	public void NullCodeBlockerIsRejected() =>
 		Assert.ThrowsExactly<ArgumentNullException>(() => new DocComment().WriteTo(null!));
 }
