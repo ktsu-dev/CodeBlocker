@@ -167,8 +167,7 @@ public class DocComment
 				{
 					issues.Add($"<{tagName} name=\"{name}\"> is documented more than once.");
 				}
-
-				if (!declared.Contains(name))
+				else if (!declared.Contains(name))
 				{
 					issues.Add($"<{tagName} name=\"{name}\"> does not match any declared {what}.");
 				}

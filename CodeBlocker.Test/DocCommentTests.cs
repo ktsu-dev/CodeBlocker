@@ -205,6 +205,37 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	public void ValidationReportsADuplicateUndeclaredTagOnce()
+	{
+		DocComment documentation = new();
+		documentation.Params.Add(new DocTag { Name = "y", Text = "First." });
+		documentation.Params.Add(new DocTag { Name = "y", Text = "Again." });
+		documentation.Params.Add(new DocTag { Name = "y", Text = "Third." });
+
+		IReadOnlyList<string> issues = documentation.Validate(["x"], []);
+
+		Assert.HasCount(4, issues);
+		Assert.AreEqual("<param name=\"y\"> does not match any declared parameter.", issues[0]);
+		Assert.AreEqual("<param name=\"y\"> is documented more than once.", issues[1]);
+		Assert.AreEqual("<param name=\"y\"> is documented more than once.", issues[2]);
+		Assert.AreEqual("The parameter 'x' has no <param> entry.", issues[3]);
+	}
+
+	[TestMethod]
+	public void ValidationReportsADuplicateUndeclaredTypeParameterTagOnce()
+	{
+		DocComment documentation = new();
+		documentation.TypeParams.Add(new DocTag { Name = "U", Text = "First." });
+		documentation.TypeParams.Add(new DocTag { Name = "U", Text = "Again." });
+
+		IReadOnlyList<string> issues = documentation.Validate([], []);
+
+		Assert.HasCount(2, issues);
+		Assert.AreEqual("<typeparam name=\"U\"> does not match any declared type parameter.", issues[0]);
+		Assert.AreEqual("<typeparam name=\"U\"> is documented more than once.", issues[1]);
+	}
+
+	[TestMethod]
 	public void ANamedTagWithEmptyTextIsStillWritten()
 	{
 		DocComment documentation = new() { Summary = "S" };
