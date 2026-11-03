@@ -178,11 +178,17 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	/// Create a new instance of <see cref="PragmaScope"/> suppressing several warnings.
 	/// </summary>
 	/// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
-	/// <param name="warnings">The warning identifiers to suppress.</param>
+	/// <param name="warnings">
+	/// The warning identifiers to suppress. Each identifier is trimmed, and null, empty or whitespace
+	/// entries are skipped, so a sequence holding none but those is a no-op and emits no directives.
+	/// </param>
 	public PragmaScope(CodeBlocker codeBlocker, IEnumerable<string> warnings)
-		: this(codeBlocker, string.Join(", ", warnings ?? []))
+		: this(codeBlocker, JoinWarnings(warnings))
 	{
 	}
+
+	private static string JoinWarnings(IEnumerable<string>? warnings) =>
+		string.Join(", ", (warnings ?? []).Where(warning => !string.IsNullOrWhiteSpace(warning)).Select(warning => warning.Trim()));
 
 	private static void Begin(CodeBlocker codeBlocker, string warnings)
 	{
