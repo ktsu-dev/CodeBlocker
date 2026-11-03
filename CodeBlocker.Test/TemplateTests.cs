@@ -930,7 +930,7 @@ public sealed class TemplateTests
 
 		InvalidOperationException exception =
 			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
-		StringAssert.Contains(exception.Message, "'P'");
+		Assert.Contains("'P'", exception.Message);
 		Assert.AreEqual(string.Empty, codeBlocker.ToString());
 	}
 
