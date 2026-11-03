@@ -463,6 +463,18 @@ public sealed class TemplateTests
 			RenderExpressionBody(codeBlocker => codeBlocker.Write("\"http://x\"")));
 
 	[TestMethod]
+	public void ASlashPairInAnInterpolationFormatSpecifierIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => $\"{d:yyyy//MM}\"; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("$\"{d:yyyy//MM}\" // c")));
+
+	[TestMethod]
+	public void ASlashPairInAFormatSpecifierAfterAnAliasQualifierIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => $\"{global::System.DateTime.Now:yyyy//MM}\"; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("$\"{global::System.DateTime.Now:yyyy//MM}\" // c")));
+
+	[TestMethod]
 	public void ASlashPairInsideAVerbatimStringOpenedOnAnEarlierLineIsNotTakenForAComment() =>
 		Assert.AreEqual(
 			"public int X => @\"a\n// b\";\n",
@@ -1289,6 +1301,28 @@ public sealed class TemplateTests
 
 		Assert.AreEqual(
 			"class C\n{\n\tstring M()\n\t{\n\t\treturn @\"line1\nline2\";\n\t}\n}\n",
+			RenderInClass(method));
+	}
+
+	[TestMethod]
+	public void AMethodBodyKeepsAVerbatimStringsContinuationLinesAsWrittenAfterASlashPairInAFormatSpecifier()
+	{
+		MethodTemplate method = new()
+		{
+			Name = "M",
+			Type = "string",
+			BodyFactory = b =>
+			{
+				b.WriteLine("{");
+				b.Indent();
+				b.WriteLine("return $@\"{d:yyyy//MM}\nline2\";");
+				b.Outdent();
+				b.WriteLine("}");
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring M()\n\t{\n\t\treturn $@\"{d:yyyy//MM}\nline2\";\n\t}\n}\n",
 			RenderInClass(method));
 	}
 
