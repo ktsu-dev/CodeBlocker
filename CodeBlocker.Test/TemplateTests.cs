@@ -412,17 +412,44 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
-	public void AnEmptyExpressionBodyStillTerminatesTheDeclaration()
+	public void AnEmptyExpressionBodyIsRejectedBeforeAnythingIsWritten()
 	{
+		// It used to render "public int X => ;", which does not compile, and raise nothing.
 		PropertyTemplate property = new()
 		{
 			Type = "int",
 			Name = "X",
 			Keywords = { "public" },
+			Documentation = new DocComment { Summary = "s" },
 			ExpressionBodyFactory = _ => { },
 		};
 
-		Assert.AreEqual("public int X => ;\n", Render(property));
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOfOnlyBlankLinesIsRejectedBeforeAnythingIsWritten()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "X",
+			ExpressionBodyFactory = codeBlocker =>
+			{
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("  ");
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
 	private static string RenderExpressionBody(Action<CodeBlocker> expressionFactory) =>
@@ -583,6 +610,33 @@ public sealed class TemplateTests
 		codeBlocker.WriteLine("int a;");
 
 		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionAccessorThatWritesNoExpressionIsRejectedBeforeAnythingIsWritten()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			Getter = AccessorTemplate.Expression(_ => { }),
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AStandaloneExpressionAccessorThatWritesNoExpressionWritesNothing()
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => AccessorTemplate.Expression(_ => { }).WriteTo(codeBlocker, "get"));
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 

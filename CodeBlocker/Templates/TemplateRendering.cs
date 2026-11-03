@@ -308,13 +308,38 @@ internal static class TemplateRendering
 	}
 
 	/// <summary>
+	/// Renders an expression body's expression into its lines, so it can be checked before anything
+	/// of the declaration it belongs to is written.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> the expression will be written to.</param>
+	/// <param name="expressionFactory">
+	/// The callback that writes the expression, without <c>=&gt;</c> or a semicolon.
+	/// </param>
+	/// <param name="owner">Names the declaration in the exception message, for example <c>Property 'P'</c>.</param>
+	/// <returns>The expression's lines, for <see cref="WriteExpressionBody"/>.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// The callback wrote nothing but blank lines. An expression body has no valid empty form: it
+	/// would render as <c>=&gt; ;</c>, which does not compile.
+	/// </exception>
+	internal static string[] RenderExpression(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory, string owner)
+	{
+		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
+		if (lines.All(string.IsNullOrWhiteSpace))
+		{
+			throw new InvalidOperationException(
+				$"{owner} has an expression body whose callback wrote no expression, which would render as " +
+				"\"=> ;\". Write an expression, or use a block body or an automatic accessor instead.");
+		}
+
+		return lines;
+	}
+
+	/// <summary>
 	/// Writes an expression body — the arrow, the expression and its terminating semicolon — and
 	/// ends the line.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="expressionFactory">
-	/// The callback that writes the expression, without <c>=&gt;</c> or a semicolon.
-	/// </param>
+	/// <param name="lines">The expression, as <see cref="RenderExpression"/> rendered it.</param>
 	/// <remarks>
 	/// The first line of the expression stays on the declaration line, after the arrow, and every
 	/// following line is spliced at the current indent, so a multi-line switch expression, collection
@@ -323,10 +348,8 @@ internal static class TemplateRendering
 	/// of its own. A line comment there keeps the semicolon in front of it, and a line holding only a
 	/// comment is not code, so the semicolon never ends up inside a comment.
 	/// </remarks>
-	internal static void WriteExpressionBody(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory)
+	internal static void WriteExpressionBody(CodeBlocker codeBlocker, string[] lines)
 	{
-		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
-
 		int last = lines.Length - 1;
 		while (last >= 0 && lines[last].Length == 0)
 		{
@@ -342,11 +365,6 @@ internal static class TemplateRendering
 		}
 
 		codeBlocker.Write(" => ");
-		if (last < 0)
-		{
-			codeBlocker.WriteLine(";");
-			return;
-		}
 
 		int[] codeEnds = FindCodeEnds(lines);
 		int terminated = last;
