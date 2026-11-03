@@ -120,10 +120,8 @@ public class PropertyTemplate : MemberTemplate
 
 		codeBlocker.Write(" }");
 		WriteDefaultValueTo(codeBlocker);
-		codeBlocker.WriteLine(DefaultValueIsSet ? ";" : string.Empty);
+		codeBlocker.WriteLine(HasDefaultValue ? ";" : string.Empty);
 	}
-
-	private bool DefaultValueIsSet => !string.IsNullOrEmpty(DefaultValue);
 
 	private void WriteAccessorList(CodeBlocker codeBlocker)
 	{
@@ -140,6 +138,6 @@ public class PropertyTemplate : MemberTemplate
 		// Scope would not allow.
 		codeBlocker.Write("}");
 		WriteDefaultValueTo(codeBlocker);
-		codeBlocker.WriteLine(DefaultValueIsSet ? ";" : string.Empty);
+		codeBlocker.WriteLine(HasDefaultValue ? ";" : string.Empty);
 	}
 }
