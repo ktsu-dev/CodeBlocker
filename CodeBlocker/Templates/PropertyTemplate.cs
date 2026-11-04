@@ -54,6 +54,27 @@ public class PropertyTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
+		Validate();
+		base.WriteTo(codeBlocker);
+
+		if (ExpressionBodyFactory is not null)
+		{
+			TemplateRendering.WriteExpressionBody(codeBlocker, ExpressionBodyFactory);
+			return;
+		}
+
+		if (CanUseShorthand)
+		{
+			WriteShorthand(codeBlocker);
+			return;
+		}
+
+		WriteAccessorList(codeBlocker);
+	}
+
+	/// <inheritdoc/>
+	internal override void Validate()
+	{
 		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
 		{
 			// Writing "Type Name;" here would emit a field, not a property — which is what an
@@ -71,22 +92,6 @@ public class PropertyTemplate : MemberTemplate
 			Getter?.Validate();
 			Setter?.Validate();
 		}
-
-		base.WriteTo(codeBlocker);
-
-		if (ExpressionBodyFactory is not null)
-		{
-			TemplateRendering.WriteExpressionBody(codeBlocker, ExpressionBodyFactory);
-			return;
-		}
-
-		if (CanUseShorthand)
-		{
-			WriteShorthand(codeBlocker);
-			return;
-		}
-
-		WriteAccessorList(codeBlocker);
 	}
 
 	/// <summary>The keyword the setter is written with.</summary>
