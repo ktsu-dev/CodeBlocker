@@ -28,7 +28,8 @@ public class PropertyTemplate : MemberTemplate
 	/// </summary>
 	/// <remarks>
 	/// An expression body replaces the accessor list, so <see cref="Getter"/> and
-	/// <see cref="Setter"/> are ignored when this is set.
+	/// <see cref="Setter"/> are ignored when this is set. A callback that writes no expression, or
+	/// only blank lines, is rejected: <c>=&gt; ;</c> does not compile.
 	/// </remarks>
 	public Action<CodeBlocker>? ExpressionBodyFactory { get; set; }
 
@@ -48,20 +49,31 @@ public class PropertyTemplate : MemberTemplate
 	/// <exception cref="InvalidOperationException">
 	/// <see cref="Getter"/>, <see cref="Setter"/> and <see cref="ExpressionBodyFactory"/> are all
 	/// <see langword="null"/>; or, with no expression body, an accessor's kind is unknown, or is
-	/// <see cref="AccessorKind.Expression"/> with no <see cref="AccessorTemplate.BodyFactory"/>.
+	/// <see cref="AccessorKind.Expression"/> with no <see cref="AccessorTemplate.BodyFactory"/>; or
+	/// the expression body, or an expression accessor's body, writes no expression. Nothing is
+	/// written in any of these cases.
 	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
 		Validate();
-		base.WriteTo(codeBlocker);
 
 		if (ExpressionBodyFactory is not null)
 		{
-			TemplateRendering.WriteExpressionBody(codeBlocker, ExpressionBodyFactory);
+			// Rendered before the declaration is written: an empty expression is only found by
+			// running the callback, and "Type Name =>" would otherwise be left behind.
+			string[] expression = TemplateRendering.RenderExpression(codeBlocker, ExpressionBodyFactory, $"Property '{Name}'");
+			base.WriteTo(codeBlocker);
+			TemplateRendering.WriteExpressionBody(codeBlocker, expression);
 			return;
 		}
+
+		// Likewise rendered up front, for an expression accessor's body.
+		string[]? getterExpression = Getter?.RenderExpression(codeBlocker, "get");
+		string[]? setterExpression = Setter?.RenderExpression(codeBlocker, SetterKeyword);
+
+		base.WriteTo(codeBlocker);
 
 		if (CanUseShorthand)
 		{
@@ -69,7 +81,7 @@ public class PropertyTemplate : MemberTemplate
 			return;
 		}
 
-		WriteAccessorList(codeBlocker);
+		WriteAccessorList(codeBlocker, getterExpression, setterExpression);
 	}
 
 	/// <inheritdoc/>
@@ -128,14 +140,14 @@ public class PropertyTemplate : MemberTemplate
 		codeBlocker.WriteLine(HasDefaultValue ? ";" : string.Empty);
 	}
 
-	private void WriteAccessorList(CodeBlocker codeBlocker)
+	private void WriteAccessorList(CodeBlocker codeBlocker, string[]? getterExpression, string[]? setterExpression)
 	{
 		codeBlocker.WriteLine();
 		codeBlocker.WriteLine("{");
 		codeBlocker.Indent();
 
-		Getter?.WriteTo(codeBlocker, "get");
-		Setter?.WriteTo(codeBlocker, SetterKeyword);
+		Getter?.WriteTo(codeBlocker, "get", getterExpression);
+		Setter?.WriteTo(codeBlocker, SetterKeyword, setterExpression);
 
 		codeBlocker.Outdent();
 

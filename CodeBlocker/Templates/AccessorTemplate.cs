@@ -79,13 +79,37 @@ public class AccessorTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">
 	/// <see cref="Kind"/> is not a known kind, or is <see cref="AccessorKind.Expression"/> with no
-	/// <see cref="BodyFactory"/>. Nothing is written.
+	/// <see cref="BodyFactory"/> or with one that writes no expression. Nothing is written.
 	/// </exception>
 	public void WriteTo(CodeBlocker codeBlocker, string keyword)
 	{
 		Ensure.NotNull(codeBlocker);
 		Validate();
 
+		WriteTo(codeBlocker, keyword, RenderExpression(codeBlocker, keyword));
+	}
+
+	/// <summary>
+	/// Renders the expression of an <see cref="AccessorKind.Expression"/> accessor, so an empty one
+	/// is rejected before the property it belongs to writes anything.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> the accessor will be written to.</param>
+	/// <param name="keyword">The accessor keyword, for the exception message.</param>
+	/// <returns>The expression's lines, or <see langword="null"/> for any other kind.</returns>
+	/// <exception cref="InvalidOperationException">The <see cref="BodyFactory"/> wrote no expression.</exception>
+	internal string[]? RenderExpression(CodeBlocker codeBlocker, string keyword) =>
+		Kind == AccessorKind.Expression
+			? TemplateRendering.RenderExpression(codeBlocker, BodyFactory, $"The '{keyword}' accessor")
+			: null;
+
+	/// <summary>
+	/// Writes the accessor, using an expression already rendered by <see cref="RenderExpression"/>.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
+	/// <param name="keyword">The accessor keyword: <c>get</c>, <c>set</c> or <c>init</c>.</param>
+	/// <param name="expression">The rendered expression, for an <see cref="AccessorKind.Expression"/> accessor.</param>
+	internal void WriteTo(CodeBlocker codeBlocker, string keyword, string[]? expression)
+	{
 		string prefix = string.IsNullOrEmpty(Modifier) ? keyword : $"{Modifier} {keyword}";
 
 		switch (Kind)
@@ -96,7 +120,7 @@ public class AccessorTemplate
 
 			case AccessorKind.Expression:
 				codeBlocker.Write(prefix);
-				TemplateRendering.WriteExpressionBody(codeBlocker, BodyFactory);
+				TemplateRendering.WriteExpressionBody(codeBlocker, expression ?? RenderExpression(codeBlocker, keyword)!);
 				break;
 
 			case AccessorKind.Block:
@@ -120,6 +144,10 @@ public class AccessorTemplate
 	/// <see cref="Kind"/> is not a known kind, or is <see cref="AccessorKind.Expression"/> with no
 	/// <see cref="BodyFactory"/>, which would render as <c>get =&gt; ;</c>.
 	/// </exception>
+	/// <remarks>
+	/// This never runs <see cref="BodyFactory"/>. A factory that runs and writes no expression is
+	/// caught by <see cref="RenderExpression"/>, which the writers call before writing anything.
+	/// </remarks>
 	internal void Validate()
 	{
 		if (Kind is not (AccessorKind.Auto or AccessorKind.Expression or AccessorKind.Block))
