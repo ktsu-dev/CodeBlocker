@@ -211,6 +211,34 @@ public sealed class ScopesTests
 	}
 
 	[TestMethod]
+	public void PragmaScopeWithOnlyEmptyWarningEntriesIsANoOp()
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		using (new PragmaScope(codeBlocker, ["", " ", null!]))
+		{
+			codeBlocker.WriteLine("public int Value;");
+		}
+
+		Assert.AreEqual("public int Value;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void PragmaScopeSkipsEmptyWarningEntriesAmongRealOnes()
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		using (new PragmaScope(codeBlocker, ["CS0168", "", " CA1707 "]))
+		{
+			codeBlocker.WriteLine("int x;");
+		}
+
+		Assert.AreEqual(
+			"#pragma warning disable CS0168, CA1707\nint x;\n#pragma warning restore CS0168, CA1707\n",
+			codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void PragmaScopeWithAnEmptyWarningSequenceDoesNotAffectAnOuterScope()
 	{
 		using CodeBlocker codeBlocker = Create();
