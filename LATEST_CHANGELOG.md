@@ -1,7 +1,18 @@
-## v2.3.6 (patch)
+## v2.4.0 (minor)
 
-Changes since v2.3.5:
+Changes since v2.3.0:
 
+- Keep a preprocessor directive in an expression body off the arrow line and out of the semicolon [patch] (#162) (matt-edmondson)
+- Add WriteLines to write multi-line text at the current indent [minor] (#181) (matt-edmondson)
+- Ignore a trailing line terminator in comment text [patch] (#173) (matt-edmondson)
+- Report an undeclared duplicate doc tag once [patch] (#172) (matt-edmondson)
+- Check a class's members before writing any of it [patch] (#169) (matt-edmondson)
+- Read an interpolation format specifier as text, not code [patch] (#168) (matt-edmondson)
+- Skip empty entries in a PragmaScope warning list [patch] (#167) (matt-edmondson)
+- Brace a member body that holds only comments or directives [patch] (#161) (matt-edmondson)
+- Refuse a line break in a doc comment cref or name before writing [patch] (#160) (matt-edmondson)
+- Regenerate CompatibilitySuppressions.xml after the Polyfill 11.4.5 bump [patch] (#156) (matt-edmondson)
+- Refuse an empty #if condition and a multi-line directive argument [patch] (#155) (matt-edmondson)
 - Comment every line of a multi-line copyright, and refuse a multi-line region name [patch] (Claude)
 - Reject an unknown type or accessor kind, or a bodiless expression accessor, before writing [patch] (Claude)
 - Put an expression body's semicolon before a trailing line comment [patch] (Claude)
@@ -10,4 +21,12 @@ Changes since v2.3.5:
 - Reject an accessorless property or unknown operator kind before writing anything [patch] (Claude)
 - Escape a lone surrogate in a quoted string literal [patch] (Claude)
 - Start a new doc comment line at NEL, LINE SEPARATOR and PARAGRAPH SEPARATOR [patch] (Claude)
+- Pin SplitLines' handling of every literal the scanner walks [patch] (Claude)
+- Cover the terminating writer's forwarding members directly [patch] (Claude)
+- Keep a verbatim string's continuation lines as written in template bodies [patch] (Claude)
+- Leave the caller's TextWriter.NewLine as it was [patch] (Claude)
+- Render a body of only blank lines as an empty block [patch] (Claude)
+- Write param, typeparam and exception tags even when their text is empty [patch] (Claude)
+- Move CI onto the shared ci-shared.yml pipeline (Claude)
+- Keep the next line indented when NewLine() ends a partial Write() [patch] (Claude)
 
