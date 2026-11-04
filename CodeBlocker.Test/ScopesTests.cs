@@ -122,6 +122,52 @@ public sealed class ScopesTests
 	}
 
 	[TestMethod]
+	[DataRow("", DisplayName = "Empty")]
+	[DataRow("  ", DisplayName = "Whitespace")]
+	[DataRow(null, DisplayName = "Null")]
+	public void DirectiveScopeRejectsAMissingConditionBeforeWriting(string? condition)
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		Assert.ThrowsExactly<ArgumentException>(() => new DirectiveScope(codeBlocker, condition!));
+
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\r", DisplayName = "CR")]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void DirectiveScopeRejectsAConditionThatSpansLinesBeforeWriting(string terminator)
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		Assert.ThrowsExactly<ArgumentException>(() => new DirectiveScope(codeBlocker, $"DEBUG{terminator}|| TRACE"));
+
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\r", DisplayName = "CR")]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void PragmaScopeRejectsWarningsThatSpanLinesBeforeWriting(string terminator)
+	{
+		using CodeBlocker codeBlocker = Create();
+
+		Assert.ThrowsExactly<ArgumentException>(() => new PragmaScope(codeBlocker, $"CS1591{terminator}CA1707"));
+		Assert.ThrowsExactly<ArgumentException>(() => new PragmaScope(codeBlocker, [$"CS1591{terminator}", "CA1707"]));
+
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void PragmaScopeDisablesAndRestoresTheSameWarnings()
 	{
 		using CodeBlocker codeBlocker = Create();
