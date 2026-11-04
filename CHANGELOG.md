@@ -2,6 +2,7 @@
 
 Changes since v2.3.0:
 
+- Add a SessionStart hook for Claude Code cloud sessions (#145) (matt-edmondson)
 - Keep a preprocessor directive in an expression body off the arrow line and out of the semicolon [patch] (#162) (matt-edmondson)
 - Add WriteLines to write multi-line text at the current indent [minor] (#181) (matt-edmondson)
 - Ignore a trailing line terminator in comment text [patch] (#173) (matt-edmondson)
