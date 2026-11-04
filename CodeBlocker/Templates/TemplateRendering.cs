@@ -102,9 +102,18 @@ internal static class TemplateRendering
 	/// would land at the current indent and every following line would keep the indentation it had
 	/// in its own buffer, which is why a nested body used to come out flush against the left margin.
 	/// </remarks>
-	internal static void SpliceFragment(CodeBlocker parent, string fragment)
+	internal static void SpliceFragment(CodeBlocker parent, string fragment) =>
+		SpliceLines(parent, SplitLines(parent, fragment));
+
+	/// <summary>
+	/// Writes already-split lines at the parent's current indent, as <see cref="SpliceFragment"/> does
+	/// for a whole fragment.
+	/// </summary>
+	/// <param name="parent">The <see cref="CodeBlocker"/> to write the lines to.</param>
+	/// <param name="lines">The lines, as <see cref="SplitLines"/> returns them.</param>
+	private static void SpliceLines(CodeBlocker parent, IEnumerable<string> lines)
 	{
-		foreach (string line in SplitLines(parent, fragment))
+		foreach (string line in lines)
 		{
 			if (line.Length == 0)
 			{
@@ -279,7 +288,12 @@ internal static class TemplateRendering
 		}
 
 		string body = RenderFragment(codeBlocker, bodyFactory);
-		string[] lines = SplitLines(codeBlocker, body);
+
+		// Blank lines before the first and after the last line of the body are spacing the factory
+		// left around it, not part of it: spliced, a leading one would separate the declaration from
+		// its opening brace and a trailing one would add to the blank line between members. Blank
+		// lines inside the body are kept.
+		string[] lines = TrimBlankLines(SplitLines(codeBlocker, body));
 
 		// Blank lines carry no body of their own, so they are left out when deciding its shape. A
 		// factory that only wrote spacing, such as a NewLine after a loop over an empty collection,
@@ -302,7 +316,7 @@ internal static class TemplateRendering
 			codeBlocker.WriteLine();
 			using (new Scope(codeBlocker))
 			{
-				SpliceFragment(codeBlocker, body);
+				SpliceLines(codeBlocker, lines);
 			}
 
 			return;
@@ -318,7 +332,24 @@ internal static class TemplateRendering
 
 		// A braced body starts on the line after the declaration.
 		codeBlocker.WriteLine();
-		SpliceFragment(codeBlocker, body);
+		SpliceLines(codeBlocker, lines);
+	}
+
+	/// <summary>
+	/// Drops the empty lines at the start and end of a body's lines, keeping those between them.
+	/// </summary>
+	/// <param name="lines">The lines, as <see cref="SplitLines"/> returns them.</param>
+	/// <returns>The lines from the first non-empty one to the last, or none if every line is empty.</returns>
+	private static string[] TrimBlankLines(string[] lines)
+	{
+		int first = Array.FindIndex(lines, line => line.Length != 0);
+		if (first < 0)
+		{
+			return [];
+		}
+
+		int last = Array.FindLastIndex(lines, line => line.Length != 0);
+		return [.. lines.Skip(first).Take(last - first + 1)];
 	}
 
 	/// <summary>
