@@ -294,6 +294,20 @@ internal static class TemplateRendering
 			return;
 		}
 
+		// A comment or a directive is not a body either: written after the declaration it leaves the
+		// member with none, so a body made only of them is wrapped in braces instead. A generator
+		// writing "// no fields to reset" in place of an empty loop would otherwise emit CS1002.
+		if (!HasCode(lines))
+		{
+			codeBlocker.WriteLine();
+			using (new Scope(codeBlocker))
+			{
+				SpliceFragment(codeBlocker, body);
+			}
+
+			return;
+		}
+
 		if (contentLines.Length == 1)
 		{
 			// An expression body stays on the declaration line.
@@ -430,6 +444,26 @@ internal static class TemplateRendering
 	/// <param name="line">The line to check.</param>
 	/// <returns><see langword="true"/> if the line's first non-whitespace character is <c>#</c>.</returns>
 	private static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
+
+	/// <summary>
+	/// Reports whether any line of a fragment holds code: something other than a line comment or a
+	/// preprocessor directive.
+	/// </summary>
+	/// <param name="lines">The lines of a fragment, as <see cref="SplitLines"/> returns them.</param>
+	/// <returns><see langword="true"/> if at least one line has code on it.</returns>
+	private static bool HasCode(string[] lines)
+	{
+		int[] codeEnds = FindCodeEnds(lines);
+		for (int i = 0; i < lines.Length; i++)
+		{
+			if (IsCode(lines[i][..codeEnds[i]]))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	/// <summary>
 	/// Finds where the code on each line ends: at the start of the line comment the line ends in,
