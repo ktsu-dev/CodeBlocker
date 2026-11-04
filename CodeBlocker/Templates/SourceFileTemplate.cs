@@ -49,10 +49,17 @@ public static class SourceFileTemplateExtensions
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="codeBlocker"/> or <paramref name="template"/> is <see langword="null"/>.
 	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// A type in the file would be refused when written. Nothing is written.
+	/// </exception>
 	public static CodeBlocker AddSourceFile(this CodeBlocker codeBlocker, SourceFileTemplate template)
 	{
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(template);
+
+		// Checked before the header is written, so a type that would be refused leaves nothing
+		// behind rather than a file holding only the types before it.
+		ValidateAll(template.Classes);
 
 		codeBlocker.AddDocumentation(template.Documentation);
 		codeBlocker.AddComments(template.Comments);
@@ -82,19 +89,35 @@ public static class SourceFileTemplateExtensions
 	/// <param name="classes">The types to write.</param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <exception cref="ArgumentNullException">
-	/// <paramref name="codeBlocker"/> or <paramref name="classes"/> is <see langword="null"/>.
+	/// <paramref name="codeBlocker"/> or <paramref name="classes"/>, or one of the types, is
+	/// <see langword="null"/>. Nothing is written.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// One of the types would be refused when written. Nothing is written.
 	/// </exception>
 	public static CodeBlocker AddClasses(this CodeBlocker codeBlocker, IEnumerable<ClassTemplate> classes)
 	{
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(classes);
 
-		foreach (ClassTemplate classTemplate in classes)
+		List<ClassTemplate> classList = [.. classes];
+		ValidateAll(classList);
+
+		foreach (ClassTemplate classTemplate in classList)
 		{
 			codeBlocker.AddClass(classTemplate);
 			codeBlocker.NewLine();
 		}
 
 		return codeBlocker;
+	}
+
+	private static void ValidateAll(IEnumerable<ClassTemplate> classes)
+	{
+		foreach (ClassTemplate classTemplate in classes)
+		{
+			Ensure.NotNull(classTemplate);
+			classTemplate.Validate();
+		}
 	}
 }

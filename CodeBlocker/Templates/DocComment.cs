@@ -97,9 +97,18 @@ public class DocComment
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">
+	/// <see cref="InheritDocCref"/>, a <see cref="SeeAlso"/> entry, or the <see cref="DocTag.Name"/> of
+	/// a <see cref="TypeParams"/>, <see cref="Params"/> or <see cref="Exceptions"/> entry contains a
+	/// line break. Nothing is written.
+	/// </exception>
 	public void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
+
+		// Checked before the first line is written: a cref or name cannot be split across /// lines
+		// the way element text is, and left as it is the rest of it would be compiled as code.
+		EnsureAttributesFitOnOneLine();
 
 		if (InheritDoc)
 		{
@@ -167,8 +176,7 @@ public class DocComment
 				{
 					issues.Add($"<{tagName} name=\"{name}\"> is documented more than once.");
 				}
-
-				if (!declared.Contains(name))
+				else if (!declared.Contains(name))
 				{
 					issues.Add($"<{tagName} name=\"{name}\"> does not match any declared {what}.");
 				}
@@ -177,6 +185,39 @@ public class DocComment
 			foreach (string name in declared.Where(name => !documented.Contains(name)))
 			{
 				issues.Add($"The {what} '{name}' has no <{tagName}> entry.");
+			}
+		}
+	}
+
+	private void EnsureAttributesFitOnOneLine()
+	{
+		if (InheritDoc)
+		{
+			EnsureSingleLine(InheritDocCref, "inheritdoc cref", nameof(InheritDocCref));
+		}
+
+		EnsureNamesSingleLine(TypeParams, "typeparam name", nameof(TypeParams));
+		EnsureNamesSingleLine(Params, "param name", nameof(Params));
+		EnsureNamesSingleLine(Exceptions, "exception cref", nameof(Exceptions));
+
+		foreach (string cref in SeeAlso)
+		{
+			EnsureSingleLine(cref, "seealso cref", nameof(SeeAlso));
+		}
+
+		static void EnsureNamesSingleLine(Collection<DocTag> tags, string what, string paramName)
+		{
+			foreach (DocTag tag in tags)
+			{
+				EnsureSingleLine(tag.Name, what, paramName);
+			}
+		}
+
+		static void EnsureSingleLine(string? value, string what, string paramName)
+		{
+			if (value is not null && LineTerminators.Contains(value))
+			{
+				throw new ArgumentException($"A doc comment {what} must fit on one /// line.", paramName);
 			}
 		}
 	}

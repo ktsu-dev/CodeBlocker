@@ -57,6 +57,30 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	public void ASingleLineSummaryWithATrailingLineTerminatorStaysOnOneLine(string terminator) =>
+		Assert.AreEqual(
+			"/// <summary>Hello.</summary>\n",
+			Render(new DocComment { Summary = $"Hello.{terminator}" }));
+
+	[TestMethod]
+	public void AMultiLineSummaryWithATrailingLineTerminatorHasNoEmptyLine() =>
+		Assert.AreEqual(
+			"/// <summary>\n/// A\n/// B\n/// </summary>\n",
+			Render(new DocComment { Summary = "A\nB\n" }));
+
+	[TestMethod]
+	public void ANamedTagWithATrailingLineTerminatorStaysOnOneLine()
+	{
+		DocComment documentation = new();
+		documentation.Params.Add(new DocTag { Name = "a", Text = "The value.\n" });
+
+		Assert.AreEqual("/// <param name=\"a\">The value.</param>\n", Render(documentation));
+	}
+
+	[TestMethod]
 	public void ABlankLineInsideATagIsWrittenWithoutTrailingWhitespace()
 	{
 		DocComment documentation = new() { Remarks = "First.\n\nSecond." };
@@ -205,6 +229,37 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	public void ValidationReportsADuplicateUndeclaredTagOnce()
+	{
+		DocComment documentation = new();
+		documentation.Params.Add(new DocTag { Name = "y", Text = "First." });
+		documentation.Params.Add(new DocTag { Name = "y", Text = "Again." });
+		documentation.Params.Add(new DocTag { Name = "y", Text = "Third." });
+
+		IReadOnlyList<string> issues = documentation.Validate(["x"], []);
+
+		Assert.HasCount(4, issues);
+		Assert.AreEqual("<param name=\"y\"> does not match any declared parameter.", issues[0]);
+		Assert.AreEqual("<param name=\"y\"> is documented more than once.", issues[1]);
+		Assert.AreEqual("<param name=\"y\"> is documented more than once.", issues[2]);
+		Assert.AreEqual("The parameter 'x' has no <param> entry.", issues[3]);
+	}
+
+	[TestMethod]
+	public void ValidationReportsADuplicateUndeclaredTypeParameterTagOnce()
+	{
+		DocComment documentation = new();
+		documentation.TypeParams.Add(new DocTag { Name = "U", Text = "First." });
+		documentation.TypeParams.Add(new DocTag { Name = "U", Text = "Again." });
+
+		IReadOnlyList<string> issues = documentation.Validate([], []);
+
+		Assert.HasCount(2, issues);
+		Assert.AreEqual("<typeparam name=\"U\"> does not match any declared type parameter.", issues[0]);
+		Assert.AreEqual("<typeparam name=\"U\"> is documented more than once.", issues[1]);
+	}
+
+	[TestMethod]
 	public void ANamedTagWithEmptyTextIsStillWritten()
 	{
 		DocComment documentation = new() { Summary = "S" };
@@ -286,6 +341,39 @@ public sealed class DocCommentTests
 			""".ReplaceLineEndings("\n"),
 			Render(method.WriteTo));
 	}
+
+	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\r", DisplayName = "CR")]
+	[DataRow("\u0085", DisplayName = "NEL")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	[DataRow("\u2029", DisplayName = "PARAGRAPH SEPARATOR")]
+	public void ALineBreakInAnAttributeValueIsRejectedBeforeWriting(string terminator)
+	{
+		string value = $"A{terminator}B";
+		DocComment[] comments =
+		[
+			new() { Summary = "s", SeeAlso = { value } },
+			new() { Summary = "s", InheritDoc = true, InheritDocCref = value },
+			new() { Summary = "s", Params = { new DocTag { Name = value, Text = "t" } } },
+			new() { Summary = "s", TypeParams = { new DocTag { Name = value, Text = "t" } } },
+			new() { Summary = "s", Exceptions = { new DocTag { Name = value, Text = "t" } } },
+		];
+
+		foreach (DocComment documentation in comments)
+		{
+			using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+			Assert.ThrowsExactly<ArgumentException>(() => documentation.WriteTo(codeBlocker));
+			Assert.AreEqual(string.Empty, codeBlocker.ToString(), "Nothing should be written before the check.");
+		}
+	}
+
+	[TestMethod]
+	public void AnUnusedInheritDocCrefIsNotChecked() =>
+		Assert.AreEqual(
+			"/// <summary>s</summary>\n",
+			Render(new DocComment { Summary = "s", InheritDocCref = "A\nB" }));
 
 	[TestMethod]
 	public void NullCodeBlockerIsRejected() =>
