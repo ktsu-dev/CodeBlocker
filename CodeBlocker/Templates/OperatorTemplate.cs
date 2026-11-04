@@ -68,13 +68,7 @@ public class OperatorTemplate : MemberTemplate
 
 		// Worked out before anything is written, so an unknown kind cannot leave a half-written
 		// declaration behind.
-		string signature = Kind switch
-		{
-			OperatorKind.Normal => $"{Type} operator {Symbol}",
-			OperatorKind.Implicit => $"implicit operator {Type}",
-			OperatorKind.Explicit => $"explicit operator {Type}",
-			_ => throw new InvalidOperationException($"Unknown operator kind '{Kind}'."),
-		};
+		string signature = Signature;
 
 		// Not through the MemberTemplate implementation: an operator's signature is its symbol and
 		// result type, not a type followed by a name.
@@ -84,4 +78,15 @@ public class OperatorTemplate : MemberTemplate
 		TemplateRendering.WriteParameterList(codeBlocker, Parameters);
 		TemplateRendering.WriteBody(codeBlocker, BodyFactory);
 	}
+
+	/// <inheritdoc/>
+	internal override void Validate() => _ = Signature;
+
+	private string Signature => Kind switch
+	{
+		OperatorKind.Normal => $"{Type} operator {Symbol}",
+		OperatorKind.Implicit => $"implicit operator {Type}",
+		OperatorKind.Explicit => $"explicit operator {Type}",
+		_ => throw new InvalidOperationException($"Unknown operator kind '{Kind}'."),
+	};
 }

@@ -105,12 +105,21 @@ public class IndentScope(CodeBlocker codeBlocker)
 /// </remarks>
 /// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
 /// <param name="name">The region name.</param>
+/// <exception cref="ArgumentException">
+/// <paramref name="name"/> contains a line terminator, which would leave the rest of the name outside
+/// the directive. Nothing is written.
+/// </exception>
 public class RegionScope(CodeBlocker codeBlocker, string name)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, name), onClose: () => End(codeBlocker))
 {
 	private static void Begin(CodeBlocker codeBlocker, string name)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (name is not null && LineTerminators.Contains(name))
+		{
+			throw new ArgumentException("A region name must fit on the #region line.", nameof(name));
+		}
+
 		codeBlocker.WriteLine(string.IsNullOrEmpty(name) ? "#region" : $"#region {name}");
 	}
 
@@ -131,12 +140,27 @@ public class RegionScope(CodeBlocker codeBlocker, string name)
 /// </remarks>
 /// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
 /// <param name="condition">The condition expression, for example <c>NET8_0_OR_GREATER</c>.</param>
+/// <exception cref="ArgumentException">
+/// <paramref name="condition"/> is null, empty or whitespace, which would write a bare <c>#if</c>, or
+/// contains a line terminator, which would leave the rest of the condition outside the directive.
+/// Nothing is written.
+/// </exception>
 public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, condition), onClose: () => End(codeBlocker))
 {
 	private static void Begin(CodeBlocker codeBlocker, string condition)
 	{
 		Ensure.NotNull(codeBlocker);
+		if (string.IsNullOrWhiteSpace(condition))
+		{
+			throw new ArgumentException("A conditional directive needs a condition.", nameof(condition));
+		}
+
+		if (LineTerminators.Contains(condition))
+		{
+			throw new ArgumentException("A condition must fit on the #if line.", nameof(condition));
+		}
+
 		codeBlocker.WriteLine($"#if {condition}");
 	}
 
@@ -162,6 +186,10 @@ public class DirectiveScope(CodeBlocker codeBlocker, string condition)
 /// identifier such as <c>CS1591</c> or a comma-separated list. Empty or whitespace warnings are a
 /// no-op and emit no directives.
 /// </param>
+/// <exception cref="ArgumentException">
+/// <paramref name="warnings"/> contains a line terminator, which would leave the rest of the list
+/// outside the directive. Nothing is written.
+/// </exception>
 public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	: ScopedAction(onOpen: () => Begin(codeBlocker, warnings), onClose: () => End(codeBlocker, warnings))
 {
@@ -169,11 +197,17 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	/// Create a new instance of <see cref="PragmaScope"/> suppressing several warnings.
 	/// </summary>
 	/// <param name="codeBlocker">The parent <see cref="CodeBlocker"/>.</param>
-	/// <param name="warnings">The warning identifiers to suppress.</param>
+	/// <param name="warnings">
+	/// The warning identifiers to suppress. Each identifier is trimmed, and null, empty or whitespace
+	/// entries are skipped, so a sequence holding none but those is a no-op and emits no directives.
+	/// </param>
 	public PragmaScope(CodeBlocker codeBlocker, IEnumerable<string> warnings)
-		: this(codeBlocker, string.Join(", ", warnings ?? []))
+		: this(codeBlocker, JoinWarnings(warnings))
 	{
 	}
+
+	private static string JoinWarnings(IEnumerable<string>? warnings) =>
+		string.Join(", ", (warnings ?? []).Where(warning => !string.IsNullOrWhiteSpace(warning)).Select(warning => warning.Trim()));
 
 	private static void Begin(CodeBlocker codeBlocker, string warnings)
 	{
@@ -181,6 +215,11 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 		if (string.IsNullOrWhiteSpace(warnings))
 		{
 			return;
+		}
+
+		if (LineTerminators.Contains(warnings))
+		{
+			throw new ArgumentException("A warning list must fit on the #pragma line.", nameof(warnings));
 		}
 
 		codeBlocker.WriteLine($"#pragma warning disable {warnings}");

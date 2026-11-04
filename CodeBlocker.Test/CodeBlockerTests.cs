@@ -88,6 +88,25 @@ public sealed class CodeBlockerTests
 	}
 
 	[TestMethod]
+	[DataRow("")]
+	[DataRow(null)]
+	public void NewLineAfterAnEmptyWriteKeepsTheNextLineIndented(string? text)
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+
+		codeBlocker.WriteLine("class C");
+		using (new Scope(codeBlocker))
+		{
+			codeBlocker.WriteLine("int a;");
+			codeBlocker.Write(text!);
+			codeBlocker.NewLine();
+			codeBlocker.WriteLine("int b;");
+		}
+
+		Assert.AreEqual("class C\n{\n\tint a;\n\n\tint b;\n}\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void NewLineAtTheStartOfALineStillWritesNoIndentation()
 	{
 		using CodeBlocker codeBlocker = CodeBlocker.Create();

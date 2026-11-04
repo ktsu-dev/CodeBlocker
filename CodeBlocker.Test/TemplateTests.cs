@@ -425,6 +425,79 @@ public sealed class TemplateTests
 		Assert.AreEqual("public int X => ;\n", Render(property));
 	}
 
+	private static string RenderExpressionBody(Action<CodeBlocker> expressionFactory) =>
+		Render(new PropertyTemplate { Type = "int", Name = "X", Keywords = { "public" }, ExpressionBodyFactory = expressionFactory });
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInALineCommentGetsItsSemicolonBeforeTheComment() =>
+		Assert.AreEqual(
+			"public int X => x; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("x // c")));
+
+	[TestMethod]
+	public void ASwitchExpressionEndingInALineCommentGetsItsSemicolonAfterTheBrace() =>
+		Assert.AreEqual(
+			"public int X => v switch\n{\n\t_ => 1,\n}; // c\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("v switch");
+				codeBlocker.WriteLine("{");
+				codeBlocker.WriteLine("\t_ => 1,");
+				codeBlocker.Write("} // c");
+			}));
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInACommentOnlyLineKeepsItsSemicolonOnTheLastLineOfCode() =>
+		Assert.AreEqual(
+			"public int X => x;\n// why\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("x");
+				codeBlocker.Write("// why");
+			}));
+
+	[TestMethod]
+	public void ASlashPairInsideAStringLiteralIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => \"http://x\";\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("\"http://x\"")));
+
+	[TestMethod]
+	public void ASlashPairInAnInterpolationFormatSpecifierIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => $\"{d:yyyy//MM}\"; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("$\"{d:yyyy//MM}\" // c")));
+
+	[TestMethod]
+	public void ASlashPairInAFormatSpecifierAfterAnAliasQualifierIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => $\"{global::System.DateTime.Now:yyyy//MM}\"; // c\n",
+			RenderExpressionBody(codeBlocker => codeBlocker.Write("$\"{global::System.DateTime.Now:yyyy//MM}\" // c")));
+
+	[TestMethod]
+	public void ASlashPairInsideAVerbatimStringOpenedOnAnEarlierLineIsNotTakenForAComment() =>
+		Assert.AreEqual(
+			"public int X => @\"a\n// b\";\n",
+			RenderExpressionBody(codeBlocker =>
+			{
+				codeBlocker.WriteLine("@\"a");
+				codeBlocker.Write("// b\"");
+			}));
+
+	[TestMethod]
+	public void AnExpressionBodiedAccessorEndingInALineCommentGetsItsSemicolonBeforeTheComment()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "X",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Expression(codeBlocker => codeBlocker.Write("x // c")),
+		};
+
+		Assert.AreEqual("public int X\n{\n\tget => x; // c\n}\n", Render(property));
+	}
+
 	[TestMethod]
 	public void ABlockBodiedAccessorIsBracedAndIndented()
 	{
@@ -478,6 +551,44 @@ public sealed class TemplateTests
 			Keywords = { "public" },
 			Attributes = { "Obsolete" },
 			Documentation = new DocComment { Summary = "Foo." },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void APropertyWithAnAccessorOfUnknownKindWritesNothing()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Auto(),
+			Setter = new AccessorTemplate { Kind = (AccessorKind)99 },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionAccessorWithNoBodyIsRejectedBeforeAnythingIsWritten()
+	{
+		// It used to render "get => ;", which does not compile, and raise nothing.
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			Keywords = { "public" },
+			Getter = new AccessorTemplate { Kind = AccessorKind.Expression },
 		};
 
 		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
@@ -548,6 +659,71 @@ public sealed class TemplateTests
 
 		Assert.AreEqual("public void M() { }\n", Render(method));
 	}
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyALineCommentIsBraced() =>
+		// "void M() // nothing to reset" has no body at all (CS1002).
+		Assert.AreEqual(
+			"void M()\n{\n\t// nothing to reset\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("// nothing to reset"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyLineCommentsIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t// a\n\t// b\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("// a");
+					codeBlocker.WriteLine("// b");
+				},
+			}));
+
+	[TestMethod]
+	public void AConstructorBodyThatWritesOnlyALineCommentIsBraced() =>
+		Assert.AreEqual(
+			"C()\n{\n\t// no state\n}\n",
+			Render(new ConstructorTemplate
+			{
+				Name = "C",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("// no state"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyAnEmptyPragmaScopeIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t#pragma warning disable CS0168\n\t#pragma warning restore CS0168\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					using PragmaScope pragma = new(codeBlocker, "CS0168");
+				},
+			}));
+
+	[TestMethod]
+	[DataRow("=> x;")]
+	[DataRow("{ }")]
+	[DataRow("=> x; // trailing")]
+	public void AOneLineBodyWithCodeStaysOnTheDeclarationLine(string body) =>
+		Assert.AreEqual(
+			$"int M() {body}\n",
+			Render(new MethodTemplate
+			{
+				Type = "int",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine(body),
+			}));
 
 	[TestMethod]
 	public void AnExpressionBodyBetweenBlankLinesStaysOnTheDeclarationLine() =>
@@ -798,6 +974,100 @@ public sealed class TemplateTests
 		Assert.ThrowsExactly<InvalidOperationException>(() => unknown.WriteTo(codeBlocker));
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
+
+	[TestMethod]
+	public void AClassOfUnknownKindWritesNothing()
+	{
+		ClassTemplate unknown = new()
+		{
+			Kind = (TypeKind)99,
+			Name = "C",
+			Keywords = { "public" },
+			Attributes = { "Obsolete" },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => unknown.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	private static PropertyTemplate InvalidProperty() => new() { Name = "P", Type = "int" };
+
+	[TestMethod]
+	public void AClassWithAnInvalidMemberWritesNothing()
+	{
+		ClassTemplate type = new() { Name = "C" };
+		type.Members.Add(new FieldTemplate { Name = "a", Type = "int" });
+		type.Members.Add(InvalidProperty());
+		type.Members.Add(new FieldTemplate { Name = "b", Type = "int", Keywords = { "private" } });
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnInvalidMemberOfANestedClassLeavesTheOuterClassUnwritten()
+	{
+		ClassTemplate inner = new() { Name = "Inner", Members = { InvalidProperty() } };
+		ClassTemplate outer = new()
+		{
+			Name = "Outer",
+			Members = { new FieldTemplate { Name = "a", Type = "int" } },
+			NestedClasses = { inner },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int x;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(outer));
+		Assert.AreEqual("int x;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANestedClassOfUnknownKindLeavesTheOuterClassUnwritten()
+	{
+		ClassTemplate outer = new() { Name = "Outer", NestedClasses = { new ClassTemplate { Name = "Inner", Kind = (TypeKind)99 } } };
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => codeBlocker.AddClass(outer));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnOperatorOfUnknownKindLeavesItsClassUnwritten()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members = { new OperatorTemplate { Kind = (OperatorKind)99, Type = "C", Symbol = "+" } },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AClassWithValidMembersIsStillWritten() =>
+		Assert.AreEqual(
+			"class C\n{\n\tint a;\n\n\tint P { get; }\n}\n",
+			Render(new ClassTemplate
+			{
+				Name = "C",
+				Members =
+				{
+					new FieldTemplate { Name = "a", Type = "int" },
+					new PropertyTemplate { Name = "P", Type = "int", Getter = AccessorTemplate.Auto() },
+				},
+			}));
 
 	[TestMethod]
 	public void AConversionIsNamedByItsResultType()
@@ -1078,6 +1348,37 @@ public sealed class TemplateTests
 		Assert.AreEqual(string.Empty, Render(codeBlocker => codeBlocker.AddSourceFile(new SourceFileTemplate())));
 
 	[TestMethod]
+	public void ASourceFileWithAnInvalidClassWritesNothing()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System" },
+			Comments = { "// <auto-generated />" },
+			Classes =
+			{
+				new ClassTemplate { Name = "Good" },
+				new ClassTemplate { Name = "Bad", Members = { InvalidProperty() } },
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddSourceFile(file));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AddClassesWithAnInvalidClassWritesNothing()
+	{
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClasses(
+			[new ClassTemplate { Name = "Good" }, new ClassTemplate { Name = "Bad", Members = { InvalidProperty() } }]));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void ASourceFileWritesItsPreambleThenItsTypes()
 	{
 		SourceFileTemplate file = new()
@@ -1091,6 +1392,37 @@ public sealed class TemplateTests
 
 		Assert.AreEqual(
 			"// <auto-generated />\nnamespace Contoso;\n\nusing System;\n\npublic class Widget\n{\n}\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
+	public void ASourceFileWritesItsGlobalAttributesAfterItsUsingsAndBeforeItsNamespace()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System" },
+			Attributes = { "assembly: CLSCompliant(true)" },
+			Classes = { new ClassTemplate { Name = "Widget", Keywords = { "public" } } },
+		};
+
+		Assert.AreEqual(
+			"using System;\n\n[assembly: CLSCompliant(true)]\n\nnamespace Contoso;\n\npublic class Widget\n{\n}\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
+	public void ASourceFileWithNoNamespaceWritesItsGlobalAttributesAfterItsUsings()
+	{
+		SourceFileTemplate file = new()
+		{
+			Usings = { "System" },
+			Attributes = { "assembly: CLSCompliant(true)" },
+			Classes = { new ClassTemplate { Name = "Widget", Keywords = { "public" } } },
+		};
+
+		Assert.AreEqual(
+			"using System;\n\n[assembly: CLSCompliant(true)]\n\npublic class Widget\n{\n}\n\n",
 			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
 	}
 
@@ -1141,6 +1473,28 @@ public sealed class TemplateTests
 
 		Assert.AreEqual(
 			"class C\n{\n\tstring M()\n\t{\n\t\treturn @\"line1\nline2\";\n\t}\n}\n",
+			RenderInClass(method));
+	}
+
+	[TestMethod]
+	public void AMethodBodyKeepsAVerbatimStringsContinuationLinesAsWrittenAfterASlashPairInAFormatSpecifier()
+	{
+		MethodTemplate method = new()
+		{
+			Name = "M",
+			Type = "string",
+			BodyFactory = b =>
+			{
+				b.WriteLine("{");
+				b.Indent();
+				b.WriteLine("return $@\"{d:yyyy//MM}\nline2\";");
+				b.Outdent();
+				b.WriteLine("}");
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tstring M()\n\t{\n\t\treturn $@\"{d:yyyy//MM}\nline2\";\n\t}\n}\n",
 			RenderInClass(method));
 	}
 

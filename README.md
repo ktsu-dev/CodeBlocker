@@ -536,6 +536,7 @@ The main class for building indented code blocks.
 | `WriteLine()` | `void` | Writes an empty line with current indentation |
 | `Write(string text)` | `void` | Writes text without adding a new line |
 | `NewLine()` | `void` | Writes an empty line without indentation |
+| `WriteLines(string fragment)` | `void` | Writes text that may span several lines, indenting every line at the current level and ending each with `NewLineString`. A line break inside a verbatim string literal is left as written |
 | `Indent()` | `void` | Increases the indent level |
 | `Outdent()` | `void` | Decreases the indent level |
 | `ToString()` | `string` | Returns the generated code as a string |

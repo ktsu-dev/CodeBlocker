@@ -60,13 +60,24 @@ public class ClassTemplate : TemplateBase
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <see cref="Kind"/>, or the kind of a nested type, is not a known kind. Nothing is written.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// A member, or a member of a nested type, would be refused when written. Nothing is written.
+	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
+		// Everything is checked before the doc comment, attributes and modifiers are written, so a
+		// failing check cannot leave an unfinished declaration behind, nor a closed body that is
+		// silently missing the failing member and everything after it.
+		Validate();
+		string keyword = TypeKindKeywords.For(Kind);
 		base.WriteTo(codeBlocker);
 
-		codeBlocker.Write($"{TypeKindKeywords.For(Kind)} {Name}");
+		codeBlocker.Write($"{keyword} {Name}");
 		TemplateRendering.WriteTypeParameterList(codeBlocker, TypeParameters);
 
 		if (PositionalParameters.Count > 0)
@@ -88,6 +99,22 @@ public class ClassTemplate : TemplateBase
 		// last constraint clause.
 		codeBlocker.WriteLine();
 		WriteBodyTo(codeBlocker);
+	}
+
+	/// <inheritdoc/>
+	internal override void Validate()
+	{
+		_ = TypeKindKeywords.For(Kind);
+
+		foreach (MemberTemplate member in Members)
+		{
+			member.Validate();
+		}
+
+		foreach (ClassTemplate nestedClass in NestedClasses)
+		{
+			nestedClass.Validate();
+		}
 	}
 
 	/// <summary>
