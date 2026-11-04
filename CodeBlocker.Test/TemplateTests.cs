@@ -498,6 +498,63 @@ public sealed class TemplateTests
 		Assert.AreEqual("public int X\n{\n\tget => x; // c\n}\n", Render(property));
 	}
 
+	private static void WriteDebugConditional(CodeBlocker codeBlocker)
+	{
+		codeBlocker.WriteLine("#if DEBUG");
+		codeBlocker.WriteLine("1");
+		codeBlocker.WriteLine("#else");
+		codeBlocker.WriteLine("2");
+		codeBlocker.WriteLine("#endif");
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOpeningWithADirectiveStartsBelowTheArrowAndEndsAfterTheLastDirective() =>
+		// Used to render "int P => #if DEBUG" (CS1040) and "#endif;" (CS1025).
+		Assert.AreEqual(
+			"int P =>\n#if DEBUG\n1\n#else\n2\n#endif\n;\n",
+			Render(new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = WriteDebugConditional }));
+
+	[TestMethod]
+	public void AnExpressionBodiedAccessorWithADirectiveIsTerminatedAfterIt() =>
+		Assert.AreEqual(
+			"int P\n{\n\tget =>\n\t#if DEBUG\n\t1\n\t#else\n\t2\n\t#endif\n\t;\n}\n",
+			Render(new PropertyTemplate { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(WriteDebugConditional) }));
+
+	[TestMethod]
+	public void AnExpressionBodyEndingInADirectiveAfterCodeOnTheArrowLineIsTerminatedAfterIt() =>
+		Assert.AreEqual(
+			"int P => 1\n#if DEBUG\n+ 2\n#endif\n;\n",
+			Render(new PropertyTemplate
+			{
+				Type = "int",
+				Name = "P",
+				ExpressionBodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("1");
+					codeBlocker.WriteLine("#if DEBUG");
+					codeBlocker.WriteLine("+ 2");
+					codeBlocker.WriteLine("#endif");
+				},
+			}));
+
+	[TestMethod]
+	public void AnExpressionBodyWithCodeAfterItsLastDirectiveTerminatesThatCode() =>
+		Assert.AreEqual(
+			"int P => 1\n#if DEBUG\n+ 2\n#endif\n+ 3;\n",
+			Render(new PropertyTemplate
+			{
+				Type = "int",
+				Name = "P",
+				ExpressionBodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("1");
+					codeBlocker.WriteLine("#if DEBUG");
+					codeBlocker.WriteLine("+ 2");
+					codeBlocker.WriteLine("#endif");
+					codeBlocker.WriteLine("+ 3");
+				},
+			}));
+
 	[TestMethod]
 	public void ABlockBodiedAccessorIsBracedAndIndented()
 	{
