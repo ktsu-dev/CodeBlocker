@@ -22,7 +22,8 @@ public abstract class TemplateBase
 	public string Type { get; set; } = string.Empty;
 
 	/// <summary>
-	/// Gets or sets the initialiser or default value. Empty means no initialiser is written.
+	/// Gets or sets the initialiser or default value. Empty means no initialiser is written, unless
+	/// <see cref="DefaultValueIsQuoted"/> is set, in which case it is the empty string <c>""</c>.
 	/// </summary>
 	public string DefaultValue { get; set; } = string.Empty;
 
@@ -32,6 +33,12 @@ public abstract class TemplateBase
 	/// for anything already written as an expression.
 	/// </summary>
 	public bool DefaultValueIsQuoted { get; set; }
+
+	/// <summary>
+	/// Gets a value indicating whether an initialiser is written: <see cref="DefaultValue"/> is not
+	/// empty, or it is quoted, where empty raw text is the empty string literal.
+	/// </summary>
+	private protected bool HasDefaultValue => DefaultValueIsQuoted || !string.IsNullOrEmpty(DefaultValue);
 
 	/// <summary>
 	/// Gets the attributes to write before the declaration, each without its square brackets.
@@ -90,7 +97,7 @@ public abstract class TemplateBase
 	}
 
 	/// <summary>
-	/// Writes <c> = value</c> when <see cref="DefaultValue"/> is set, as an escaped string literal
+	/// Writes <c> = value</c> when <see cref="HasDefaultValue"/> is set, as an escaped string literal
 	/// when <see cref="DefaultValueIsQuoted"/> is set.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
@@ -98,7 +105,7 @@ public abstract class TemplateBase
 	{
 		Ensure.NotNull(codeBlocker);
 
-		if (string.IsNullOrEmpty(DefaultValue))
+		if (!HasDefaultValue)
 		{
 			return;
 		}
