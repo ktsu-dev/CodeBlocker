@@ -57,16 +57,7 @@ public class PropertyTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
-		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
-		{
-			// Writing "Type Name;" here would emit a field, not a property — which is what an
-			// accessorless property used to render as. An abstract or interface property is
-			// spelled with accessors that have no body: Getter = AccessorTemplate.Auto().
-			// Checked before the declaration is written, which would otherwise be left unfinished.
-			throw new InvalidOperationException(
-				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
-				"Setter, or ExpressionBodyFactory.");
-		}
+		Validate();
 
 		if (ExpressionBodyFactory is not null)
 		{
@@ -78,9 +69,7 @@ public class PropertyTemplate : MemberTemplate
 			return;
 		}
 
-		// Likewise checked up front: the accessor list is only reached after "Type Name {".
-		Getter?.Validate();
-		Setter?.Validate();
+		// Likewise rendered up front, for an expression accessor's body.
 		string[]? getterExpression = Getter?.RenderExpression(codeBlocker, "get");
 		string[]? setterExpression = Setter?.RenderExpression(codeBlocker, SetterKeyword);
 
@@ -93,6 +82,28 @@ public class PropertyTemplate : MemberTemplate
 		}
 
 		WriteAccessorList(codeBlocker, getterExpression, setterExpression);
+	}
+
+	/// <inheritdoc/>
+	internal override void Validate()
+	{
+		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
+		{
+			// Writing "Type Name;" here would emit a field, not a property — which is what an
+			// accessorless property used to render as. An abstract or interface property is
+			// spelled with accessors that have no body: Getter = AccessorTemplate.Auto().
+			// Checked before the declaration is written, which would otherwise be left unfinished.
+			throw new InvalidOperationException(
+				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
+				"Setter, or ExpressionBodyFactory.");
+		}
+
+		if (ExpressionBodyFactory is null)
+		{
+			// Likewise checked up front: the accessor list is only reached after "Type Name {".
+			Getter?.Validate();
+			Setter?.Validate();
+		}
 	}
 
 	/// <summary>The keyword the setter is written with.</summary>

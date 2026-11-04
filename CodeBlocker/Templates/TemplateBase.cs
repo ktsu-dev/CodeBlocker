@@ -79,6 +79,17 @@ public abstract class TemplateBase
 	}
 
 	/// <summary>
+	/// Throws if <see cref="WriteTo"/> would refuse this template, without writing anything.
+	/// </summary>
+	/// <remarks>
+	/// A container calls this on everything it holds before writing any of it, so a template that
+	/// fails its check cannot leave a container written without it, and the ones after it.
+	/// </remarks>
+	internal virtual void Validate()
+	{
+	}
+
+	/// <summary>
 	/// Writes <c> = value</c> when <see cref="DefaultValue"/> is set, as an escaped string literal
 	/// when <see cref="DefaultValueIsQuoted"/> is set.
 	/// </summary>

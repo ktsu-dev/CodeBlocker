@@ -64,6 +64,7 @@ internal static class VerbatimStringScanner
 	private static void ScanCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool isInterpolationHole = false)
 	{
 		int braceDepth = 0;
+		int bracketDepth = 0;
 		while (position < text.Length)
 		{
 			if (lineCommentStarts is not null && text[position] == '/' && At(text, position + 1) == '/')
@@ -76,11 +77,61 @@ internal static class VerbatimStringScanner
 				continue;
 			}
 
-			if (isInterpolationHole && IsClosingBrace(text[position], ref braceDepth))
+			if (isInterpolationHole)
 			{
-				return;
+				char c = text[position];
+				if (IsClosingBrace(c, ref braceDepth))
+				{
+					return;
+				}
+
+				if (braceDepth == 0 && IsFormatSpecifierColon(text, position, ref bracketDepth))
+				{
+					SkipFormatSpecifier(text, ref position);
+					return;
+				}
 			}
 
+			position++;
+		}
+	}
+
+	/// <summary>
+	/// Tracks parenthesis and bracket nesting inside an interpolation hole, and reports whether the
+	/// character at <paramref name="position"/> is the colon that starts the hole's format specifier.
+	/// </summary>
+	/// <remarks>
+	/// Only a colon outside every nested parenthesis, bracket and brace starts one: a conditional
+	/// expression or a named argument is always nested. The <c>::</c> of an alias qualifier is not
+	/// one either.
+	/// </remarks>
+	private static bool IsFormatSpecifierColon(string text, int position, ref int bracketDepth)
+	{
+		char c = text[position];
+		if (c is '(' or '[')
+		{
+			bracketDepth++;
+		}
+		else if (c is ')' or ']')
+		{
+			bracketDepth = Math.Max(bracketDepth - 1, 0);
+		}
+
+		return c == ':'
+			&& bracketDepth == 0
+			&& At(text, position + 1) != ':'
+			&& (position == 0 || text[position - 1] != ':');
+	}
+
+	/// <summary>
+	/// Moves from a format specifier's colon up to the brace that closes the interpolation hole,
+	/// which is left for the caller to consume. A format specifier is literal text: a <c>//</c>,
+	/// quote or apostrophe in it starts nothing.
+	/// </summary>
+	private static void SkipFormatSpecifier(string text, ref int position)
+	{
+		while (position < text.Length && text[position] != '}' && !IsLineBreak(text[position]))
+		{
 			position++;
 		}
 	}
@@ -344,7 +395,7 @@ internal static class VerbatimStringScanner
 	{
 		position++;
 		ScanCode(text, ref position, inVerbatimText, lineCommentStarts: null, isInterpolationHole: true);
-		if (position < text.Length)
+		if (At(text, position) == '}')
 		{
 			position++;
 		}

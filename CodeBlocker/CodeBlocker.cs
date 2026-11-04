@@ -279,6 +279,73 @@ public class CodeBlocker : IDisposable
 	}
 
 	/// <summary>
+	/// Write text that may span several lines, indenting every line at the current level.
+	/// </summary>
+	/// <param name="fragment">The text to write. Writing <see langword="null"/> or an empty string does nothing.</param>
+	/// <remarks>
+	/// <para>
+	/// <see cref="WriteLine(string)"/> and <see cref="Write"/> indent only the first line of what they
+	/// are given, so a snippet from elsewhere (a doc block, a user-supplied fragment, another
+	/// generator's output) would land with every line after the first at column 0. This writes each
+	/// line separately instead, so every one picks up the current indentation.
+	/// </para>
+	/// <para>
+	/// The fragment is split at <c>\r\n</c>, <c>\n</c> and <c>\r</c>, and each line is ended with
+	/// <see cref="NewLineString"/>, so the output never mixes line endings. A line break inside a
+	/// verbatim string literal (<c>@"..."</c>, <c>$@"..."</c>) is part of the string's value rather
+	/// than the code's layout, so it is written exactly as given and the literal's continuation lines
+	/// get no indentation.
+	/// </para>
+	/// <para>
+	/// When the fragment ends in a line break, so does the output. When it does not, its last line is
+	/// left open, exactly as <see cref="Write"/> leaves it.
+	/// </para>
+	/// </remarks>
+	public void WriteLines(string fragment)
+	{
+		if (string.IsNullOrEmpty(fragment))
+		{
+			return;
+		}
+
+		bool[] inVerbatimText = Templates.VerbatimStringScanner.FindVerbatimText(fragment);
+		int lineStart = 0;
+		int position = 0;
+		while (position < fragment.Length)
+		{
+			char c = fragment[position];
+			if ((c != '\n' && c != '\r') || inVerbatimText[position])
+			{
+				position++;
+				continue;
+			}
+
+			WriteWholeLine(fragment[lineStart..position]);
+			bool isCrLf = c == '\r' && position + 1 < fragment.Length && fragment[position + 1] == '\n';
+			position += isCrLf ? 2 : 1;
+			lineStart = position;
+		}
+
+		Write(fragment[lineStart..]);
+	}
+
+	/// <summary>
+	/// Writes one line and ends it, keeping a blank line free of indentation.
+	/// </summary>
+	/// <param name="line">The line, without a terminator.</param>
+	private void WriteWholeLine(string line)
+	{
+		if (line.Length == 0)
+		{
+			NewLine();
+		}
+		else
+		{
+			WriteLine(line);
+		}
+	}
+
+	/// <summary>
 	/// Increase the indentation level.
 	/// </summary>
 	public void Indent() => IndentedTextWriter.Indent++;
