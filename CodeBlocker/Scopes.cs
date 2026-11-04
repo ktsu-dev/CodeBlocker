@@ -206,8 +206,12 @@ public class PragmaScope(CodeBlocker codeBlocker, string warnings)
 	{
 	}
 
+	// An entry holding a line terminator is kept whole rather than trimmed, so Begin still refuses
+	// it: Trim would strip a trailing terminator and quietly accept a value that spans lines.
 	private static string JoinWarnings(IEnumerable<string>? warnings) =>
-		string.Join(", ", (warnings ?? []).Where(warning => !string.IsNullOrWhiteSpace(warning)).Select(warning => warning.Trim()));
+		string.Join(", ", (warnings ?? [])
+			.Where(warning => !string.IsNullOrWhiteSpace(warning))
+			.Select(warning => LineTerminators.Contains(warning) ? warning : warning.Trim()));
 
 	private static void Begin(CodeBlocker codeBlocker, string warnings)
 	{
