@@ -75,6 +75,35 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void ParameterWritesAQuotedEmptyDefaultValue() =>
+		Assert.AreEqual(
+			"string separator = \"\"",
+			Render(new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = "", DefaultValueIsQuoted = true }));
+
+	[TestMethod]
+	public void ParameterWithAnEmptyUnquotedDefaultValueHasNone() =>
+		Assert.AreEqual("string separator", Render(new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = "" }));
+
+	[TestMethod]
+	public void AQuotedEmptyDefaultKeepsAParameterOptional()
+	{
+		MethodTemplate method = new()
+		{
+			Type = "void",
+			Name = "M",
+			Keywords = { "public" },
+			BodyFactory = _ => { },
+			Parameters =
+			{
+				new ParameterTemplate { Type = "int", Name = "count", DefaultValue = "0" },
+				new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = "", DefaultValueIsQuoted = true },
+			},
+		};
+
+		Assert.AreEqual("public void M(int count = 0, string separator = \"\") { }\n", Render(method));
+	}
+
+	[TestMethod]
 	public void ParameterKeepsItsAttributesOnTheDeclarationLine()
 	{
 		ParameterTemplate parameter = new() { Type = "int", Name = "value", Attributes = { "In" }, Keywords = { "ref" } };
@@ -101,6 +130,12 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			"private string p = \"C:\\\\temp\\\\\\\"x\\\"\";\n",
 			Render(new FieldTemplate { Type = "string", Name = "p", Keywords = { "private" }, DefaultValue = "C:\\temp\\\"x\"", DefaultValueIsQuoted = true }));
+
+	[TestMethod]
+	public void FieldWritesAQuotedEmptyInitialiser() =>
+		Assert.AreEqual(
+			"public const string Empty = \"\";\n",
+			Render(new FieldTemplate { Type = "string", Name = "Empty", Keywords = { "public", "const" }, DefaultValue = "", DefaultValueIsQuoted = true }));
 
 	[TestMethod]
 	public void FieldCommentsAndAttributesGoOnTheirOwnLines()
@@ -188,6 +223,49 @@ public sealed class TemplateTests
 		};
 
 		Assert.AreEqual("public int Count { get; set; } = 7;\n", Render(property));
+	}
+
+	[TestMethod]
+	public void AShorthandPropertyKeepsAQuotedEmptyInitialiser()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "string",
+			Name = "Prefix",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Auto(),
+			Setter = AccessorTemplate.Auto(),
+			DefaultValue = "",
+			DefaultValueIsQuoted = true,
+		};
+
+		Assert.AreEqual("public string Prefix { get; set; } = \"\";\n", Render(property));
+	}
+
+	[TestMethod]
+	public void ABracedPropertyKeepsAQuotedEmptyInitialiser()
+	{
+		PropertyTemplate property = new()
+		{
+			Type = "string",
+			Name = "Prefix",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Auto(),
+			Setter = new AccessorTemplate { Modifier = "private" },
+			DefaultValue = "",
+			DefaultValueIsQuoted = true,
+		};
+
+		Assert.AreEqual(
+			"""
+			public string Prefix
+			{
+				get;
+				private set;
+			} = "";
+
+			""".ReplaceLineEndings("\n"),
+			Render(property));
 	}
 
 	[TestMethod]
