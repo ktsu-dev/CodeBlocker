@@ -23,9 +23,21 @@ internal static class LineTerminators
 	/// the comment and into the code.
 	/// </summary>
 	/// <param name="text">The text to split.</param>
-	/// <returns>The lines, without their terminators. Text with no terminator is a single line.</returns>
-	internal static string[] Split(string text) =>
-		text.Replace("\r\n", "\n").Split(Characters);
+	/// <returns>
+	/// The lines, without their terminators. Text with no terminator is a single line. A trailing
+	/// terminator leaves an empty tail, which is not a line of its own, so <c>"A\n"</c> is the one
+	/// line <c>A</c>; a blank line inside the text, as in <c>"A\n\nB"</c>, is kept.
+	/// </returns>
+	internal static string[] Split(string text)
+	{
+		string[] lines = text.Replace("\r\n", "\n").Split(Characters);
+		if (lines.Length > 1 && lines[^1].Length == 0)
+		{
+			Array.Resize(ref lines, lines.Length - 1);
+		}
+
+		return lines;
+	}
 
 	/// <summary>
 	/// Reports whether text contains any line terminator the C# compiler recognises.

@@ -82,7 +82,7 @@ The library is built around these types:
      caller's to dispose, its `NewLine` is never changed (the terminator lives on a private
      forwarding writer), and `IsBuffered`/`ToString()` only work over a `StringWriter`
    - Indentation control via `Indent()`, `Outdent()`, and `CurrentIndent` property
-   - Output methods: `Write()`, `WriteLine()`, `NewLine()`
+   - Output methods: `Write()`, `WriteLine()`, `WriteLines()` (multi-line text, every line indented), `NewLine()`
    - Implements `IDisposable` with proper resource cleanup
 
    **Line endings.** `IndentedTextWriter` terminates lines with `Environment.NewLine`;
