@@ -57,6 +57,30 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	[DataRow("\n", DisplayName = "LF")]
+	[DataRow("\r\n", DisplayName = "CRLF")]
+	[DataRow("\u2028", DisplayName = "LINE SEPARATOR")]
+	public void ASingleLineSummaryWithATrailingLineTerminatorStaysOnOneLine(string terminator) =>
+		Assert.AreEqual(
+			"/// <summary>Hello.</summary>\n",
+			Render(new DocComment { Summary = $"Hello.{terminator}" }));
+
+	[TestMethod]
+	public void AMultiLineSummaryWithATrailingLineTerminatorHasNoEmptyLine() =>
+		Assert.AreEqual(
+			"/// <summary>\n/// A\n/// B\n/// </summary>\n",
+			Render(new DocComment { Summary = "A\nB\n" }));
+
+	[TestMethod]
+	public void ANamedTagWithATrailingLineTerminatorStaysOnOneLine()
+	{
+		DocComment documentation = new();
+		documentation.Params.Add(new DocTag { Name = "a", Text = "The value.\n" });
+
+		Assert.AreEqual("/// <param name=\"a\">The value.</param>\n", Render(documentation));
+	}
+
+	[TestMethod]
 	public void ABlankLineInsideATagIsWrittenWithoutTrailingWhitespace()
 	{
 		DocComment documentation = new() { Remarks = "First.\n\nSecond." };
