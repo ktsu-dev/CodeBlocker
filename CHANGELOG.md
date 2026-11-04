@@ -2,6 +2,7 @@
 
 Changes since v2.3.0:
 
+- Refuse an expression body that writes no expression, before writing [patch] (#178) (matt-edmondson)
 - Write a quoted empty default as "" instead of dropping it [patch] (#177) (matt-edmondson)
 - Add a SessionStart hook for Claude Code cloud sessions (#145) (matt-edmondson)
 - Keep a preprocessor directive in an expression body off the arrow line and out of the semicolon [patch] (#162) (matt-edmondson)
