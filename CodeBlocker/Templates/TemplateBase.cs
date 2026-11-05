@@ -90,11 +90,10 @@ public abstract class TemplateBase
 	/// </summary>
 	/// <remarks>
 	/// A container calls this on everything it holds before writing any of it, so a template that
-	/// fails its check cannot leave a container written without it, and the ones after it.
+	/// fails its check cannot leave a container written without it, and the ones after it. The base
+	/// check covers <see cref="Documentation"/>; an override must call it.
 	/// </remarks>
-	internal virtual void Validate()
-	{
-	}
+	internal virtual void Validate() => Documentation?.ValidateAttributes();
 
 	/// <summary>
 	/// Writes <c> = value</c> when <see cref="HasDefaultValue"/> is set, as an escaped string literal

@@ -108,7 +108,7 @@ public class DocComment
 
 		// Checked before the first line is written: a cref or name cannot be split across /// lines
 		// the way element text is, and left as it is the rest of it would be compiled as code.
-		EnsureAttributesFitOnOneLine();
+		ValidateAttributes();
 
 		if (InheritDoc)
 		{
@@ -189,7 +189,17 @@ public class DocComment
 		}
 	}
 
-	private void EnsureAttributesFitOnOneLine()
+	/// <summary>
+	/// Throws if <see cref="WriteTo"/> would refuse this comment, without writing anything.
+	/// </summary>
+	/// <remarks>
+	/// <see cref="TemplateBase.Validate"/> calls this for a template's <see cref="TemplateBase.Documentation"/>,
+	/// so a container refuses a bad doc comment before writing any of itself, not partway through.
+	/// </remarks>
+	/// <exception cref="ArgumentException">
+	/// <see cref="InheritDocCref"/>, a <see cref="SeeAlso"/> entry, or a tag name contains a line break.
+	/// </exception>
+	internal void ValidateAttributes()
 	{
 		if (InheritDoc)
 		{
