@@ -887,6 +887,65 @@ public sealed class TemplateTests
 			}));
 
 	[TestMethod]
+	public void ABodyThatWritesOnlyABlockCommentIsBraced() =>
+		// "void M() /* nothing to do */" has no body at all (CS1002).
+		Assert.AreEqual(
+			"void M()\n{\n\t/* nothing to do */\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* nothing to do */"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyAMultiLineBlockCommentIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t/* nothing\n\t   to do */\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("/* nothing");
+					codeBlocker.WriteLine("   to do */");
+				},
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyBlockAndLineCommentsIsBraced() =>
+		Assert.AreEqual(
+			"C()\n{\n\t/* a */ // b\n}\n",
+			Render(new ConstructorTemplate
+			{
+				Name = "C",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* a */ // b"),
+			}));
+
+	[TestMethod]
+	public void ABodyWithCodeAfterABlockCommentStaysOnTheDeclarationLine() =>
+		Assert.AreEqual(
+			"int M() /* note */ => 1;\n",
+			Render(new MethodTemplate
+			{
+				Type = "int",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* note */ => 1;"),
+			}));
+
+	[TestMethod]
+	public void ABlockCommentOpenerInsideAStringIsCode() =>
+		Assert.AreEqual(
+			"string M() => \"/* not a comment */\";\n",
+			Render(new MethodTemplate
+			{
+				Type = "string",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("=> \"/* not a comment */\";"),
+			}));
+
+	[TestMethod]
 	public void ABodyThatWritesOnlyAnEmptyPragmaScopeIsBraced() =>
 		Assert.AreEqual(
 			"void M()\n{\n\t#pragma warning disable CS0168\n\t#pragma warning restore CS0168\n}\n",
