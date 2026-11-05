@@ -1558,6 +1558,60 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void AClassWithAMemberWhoseDocCommentCannotBeWrittenWritesNothing()
+	{
+		// It used to write "public class C { void A() { } }" up to B, then throw.
+		MethodTemplate b = new() { Type = "void", Name = "B", BodyFactory = _ => { }, Documentation = new DocComment() };
+		b.Documentation.Params.Add(new DocTag { Name = "a\nb", Text = "t" });
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new MethodTemplate { Type = "void", Name = "A", BodyFactory = _ => { } },
+				b,
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int x;");
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddClass(type));
+		Assert.AreEqual("int x;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ASourceFileWhoseLaterClassHasADocCommentThatCannotBeWrittenWritesNothing()
+	{
+		ClassTemplate second = new() { Name = "Second", Documentation = new DocComment { Summary = "s" } };
+		second.Documentation.SeeAlso.Add("A\nB");
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System" },
+			Classes = { new ClassTemplate { Name = "First" }, second },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddSourceFile(file));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANestedClassWhoseDocCommentCannotBeWrittenLeavesTheOuterClassUnwritten()
+	{
+		ClassTemplate inner = new() { Name = "Inner", Documentation = new DocComment { InheritDoc = true, InheritDocCref = "X\r\nY" } };
+		ClassTemplate outer = new() { Name = "Outer", NestedClasses = { inner } };
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddClass(outer));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void AddClassesWithAnInvalidClassWritesNothing()
 	{
 		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
