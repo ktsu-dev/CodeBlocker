@@ -530,6 +530,48 @@ public sealed class TemplateTests
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
+	[TestMethod]
+	public void AnExpressionBodyWithADefaultValueIsRejectedBeforeAnythingIsWritten()
+	{
+		// It used to render "int P => x;" and drop the "= 5" without a word.
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			DefaultValue = "5",
+			ExpressionBodyFactory = codeBlocker => codeBlocker.Write("x"),
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AClassWithAnExpressionBodiedPropertyThatHasADefaultValueWritesNothing()
+	{
+		ClassTemplate type = new() { Name = "C" };
+		type.Members.Add(new FieldTemplate { Name = "a", Type = "int" });
+		type.Members.Add(new PropertyTemplate
+		{
+			Type = "int",
+			Name = "P",
+			DefaultValue = "5",
+			ExpressionBodyFactory = codeBlocker => codeBlocker.Write("x"),
+		});
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
 	private static string RenderExpressionBody(Action<CodeBlocker> expressionFactory) =>
 		Render(new PropertyTemplate { Type = "int", Name = "X", Keywords = { "public" }, ExpressionBodyFactory = expressionFactory });
 
