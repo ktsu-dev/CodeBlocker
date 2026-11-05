@@ -332,17 +332,21 @@ internal static class TemplateRendering
 	/// <param name="owner">Names the declaration in the exception message, for example <c>Property 'P'</c>.</param>
 	/// <returns>The expression's lines, for <see cref="WriteExpressionBody"/>.</returns>
 	/// <exception cref="InvalidOperationException">
-	/// The callback wrote nothing but blank lines. An expression body has no valid empty form: it
-	/// would render as <c>=&gt; ;</c>, which does not compile.
+	/// The callback wrote nothing but blank lines, line comments and preprocessor directives. An
+	/// expression body has no valid empty form: it would render as <c>=&gt; ;</c>, which does not
+	/// compile.
 	/// </exception>
 	internal static string[] RenderExpression(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory, string owner)
 	{
 		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
-		if (lines.All(string.IsNullOrWhiteSpace))
+		// A comment or directive is no more an expression than a blank line is: a placeholder
+		// comment would otherwise take the semicolon in front of it and render as "=> ;// ...".
+		if (!HasCode(lines))
 		{
 			throw new InvalidOperationException(
-				$"{owner} has an expression body whose callback wrote no expression, which would render as " +
-				"\"=> ;\". Write an expression, or use a block body or an automatic accessor instead.");
+				$"{owner} has an expression body whose callback wrote no expression, only blank lines, " +
+				"comments or directives, which would render as \"=> ;\". Write an expression, or use a " +
+				"block body or an automatic accessor instead.");
 		}
 
 		return lines;

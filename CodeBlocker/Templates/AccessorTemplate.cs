@@ -146,7 +146,8 @@ public class AccessorTemplate
 	/// </exception>
 	/// <remarks>
 	/// This never runs <see cref="BodyFactory"/>. A factory that runs and writes no expression is
-	/// caught by <see cref="RenderExpression"/>, which the writers call before writing anything.
+	/// caught by <see cref="RenderExpression"/>, which the writers, and a property's own validation,
+	/// call before writing anything.
 	/// </remarks>
 	internal void Validate()
 	{

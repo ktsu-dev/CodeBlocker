@@ -88,11 +88,16 @@ public abstract class TemplateBase
 	/// <summary>
 	/// Throws if <see cref="WriteTo"/> would refuse this template, without writing anything.
 	/// </summary>
+	/// <param name="codeBlocker">
+	/// The <see cref="CodeBlocker"/> the template will be written to. Nothing is written to it: it
+	/// supplies the indent and line terminator a callback is rendered with, for a check that can
+	/// only be made by running the callback.
+	/// </param>
 	/// <remarks>
 	/// A container calls this on everything it holds before writing any of it, so a template that
 	/// fails its check cannot leave a container written without it, and the ones after it.
 	/// </remarks>
-	internal virtual void Validate()
+	internal virtual void Validate(CodeBlocker codeBlocker)
 	{
 	}
 
