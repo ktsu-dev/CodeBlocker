@@ -57,7 +57,7 @@ public class PropertyTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
-		Validate();
+		ValidateDeclaration();
 
 		if (ExpressionBodyFactory is not null)
 		{
@@ -85,7 +85,31 @@ public class PropertyTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	/// <remarks>
+	/// The expression body, or an expression accessor's body, is rendered to check that it writes an
+	/// expression, so a class holding this property refuses it before writing its own header rather
+	/// than after the members ahead of it. That runs the callback once more when the property is
+	/// then written.
+	/// </remarks>
+	internal override void Validate(CodeBlocker codeBlocker)
+	{
+		ValidateDeclaration();
+
+		if (ExpressionBodyFactory is not null)
+		{
+			_ = TemplateRendering.RenderExpression(codeBlocker, ExpressionBodyFactory, $"Property '{Name}'");
+			return;
+		}
+
+		_ = Getter?.RenderExpression(codeBlocker, "get");
+		_ = Setter?.RenderExpression(codeBlocker, SetterKeyword);
+	}
+
+	/// <summary>
+	/// Throws when the property cannot be written whatever its callbacks write: when it has no
+	/// accessors and no expression body, or an accessor that cannot be written.
+	/// </summary>
+	private void ValidateDeclaration()
 	{
 		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
 		{
