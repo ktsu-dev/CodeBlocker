@@ -1537,6 +1537,20 @@ public sealed class TemplateTests
 		Assert.AreEqual(string.Empty, Render(codeBlocker => codeBlocker.AddSourceFile(new SourceFileTemplate())));
 
 	[TestMethod]
+	public void ASourceFileSkipsBlankUsings()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System", "", "System.Linq" },
+		};
+
+		Assert.AreEqual(
+			"namespace Contoso;\n\nusing System;\nusing System.Linq;\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
 	public void ASourceFileWithAnInvalidClassWritesNothing()
 	{
 		SourceFileTemplate file = new()
