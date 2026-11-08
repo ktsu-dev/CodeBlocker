@@ -38,6 +38,13 @@ public sealed class SplitLinesTests
 	[DataRow("c = '\nb", "c = '|b", DisplayName = "Unterminated char literal")]
 	[DataRow("s = \"p\nb", "s = \"p|b", DisplayName = "Unterminated regular string")]
 	[DataRow("/* @\"\nb", "/* @\"|b", DisplayName = "Unterminated block comment")]
+	[DataRow("#region a @\"C:\\\nint a;\n#endregion", "#region a @\"C:\\|int a;|#endregion", DisplayName = "Verbatim prefix in a #region name")]
+	[DataRow("\t #error $@\"x\nb", "\t #error $@\"x|b", DisplayName = "Interpolated verbatim prefix in an indented #error")]
+	[DataRow("#warning @$\"x\nb", "#warning @$\"x|b", DisplayName = "Verbatim interpolated prefix in a #warning")]
+	[DataRow("#pragma warning disable // @\"\nb", "#pragma warning disable // @\"|b", DisplayName = "Verbatim prefix in a #pragma comment")]
+	[DataRow("s = @\"p\n#q\";\nb", "s = @\"p\n#q\";|b", DisplayName = "Verbatim line starting with # stays in its literal")]
+	[DataRow("s = @\"p\n  #region @\"\"q\";\nb", "s = @\"p\n  #region @\"\"q\";|b", DisplayName = "Directive-like line inside a verbatim literal is literal text")]
+	[DataRow("a = b # @\"p\nq\";\nc", "a = b # @\"p\nq\";|c", DisplayName = "A # mid-line starts no directive")]
 	public void SplitsOnlyOutsideVerbatimStrings(string fragment, string expected) =>
 		Assert.AreEqual(expected, Split(fragment));
 
