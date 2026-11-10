@@ -182,7 +182,10 @@ public static class TemplateBaseExtensions
 	/// Writes each attribute on its own line, bracketed.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="attributes">The attributes, each without its square brackets.</param>
+	/// <param name="attributes">
+	/// The attributes, each without its square brackets. Blank entries are skipped rather than
+	/// written as <c>[]</c>.
+	/// </param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <remarks>
 	/// One per line rather than inline: a member carrying several attributes — and generated members
@@ -197,7 +200,7 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(attributes);
 
-		foreach (string attribute in attributes)
+		foreach (string attribute in TemplateRendering.NonBlank(attributes))
 		{
 			codeBlocker.WriteLine($"[{attribute}]");
 		}
@@ -209,7 +212,10 @@ public static class TemplateBaseExtensions
 	/// Writes each attribute bracketed and inline, followed by a space.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="attributes">The attributes, each without its square brackets.</param>
+	/// <param name="attributes">
+	/// The attributes, each without its square brackets. Blank entries are skipped rather than
+	/// written as <c>[]</c>.
+	/// </param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <remarks>
 	/// Used for parameters, where an attribute has to stay on the declaration line.
@@ -222,7 +228,7 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(attributes);
 
-		foreach (string attribute in attributes)
+		foreach (string attribute in TemplateRendering.NonBlank(attributes))
 		{
 			codeBlocker.Write($"[{attribute}] ");
 		}
@@ -234,7 +240,7 @@ public static class TemplateBaseExtensions
 	/// Writes the modifiers space-separated, followed by a trailing space when there is at least one.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="keywords">The modifiers, in the order they should appear.</param>
+	/// <param name="keywords">The modifiers, in the order they should appear. Blank entries are skipped.</param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="codeBlocker"/> or <paramref name="keywords"/> is <see langword="null"/>.
@@ -244,9 +250,10 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(keywords);
 
-		if (keywords.Any())
+		List<string> modifiers = TemplateRendering.NonBlank(keywords);
+		if (modifiers.Count > 0)
 		{
-			codeBlocker.Write(string.Join(" ", keywords) + " ");
+			codeBlocker.Write(string.Join(" ", modifiers) + " ");
 		}
 
 		return codeBlocker;
