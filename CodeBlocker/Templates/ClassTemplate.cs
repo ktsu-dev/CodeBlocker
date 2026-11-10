@@ -64,7 +64,9 @@ public class ClassTemplate : TemplateBase
 	/// <see cref="Kind"/>, or the kind of a nested type, is not a known kind. Nothing is written.
 	/// </exception>
 	/// <exception cref="InvalidOperationException">
-	/// A member, or a member of a nested type, would be refused when written. Nothing is written.
+	/// A member, or a member of a nested type, would be refused when written, or
+	/// <see cref="Members"/>, <see cref="NestedClasses"/> or <see cref="PositionalParameters"/> holds a
+	/// <see langword="null"/> entry. Nothing is written.
 	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
@@ -105,6 +107,14 @@ public class ClassTemplate : TemplateBase
 	internal override void Validate()
 	{
 		_ = TypeKindKeywords.For(Kind);
+
+		// Null entries are refused here rather than found while writing: a null member or nested
+		// type would throw a bare NullReferenceException, and a null positional parameter would
+		// throw after "record R" is already written.
+		string owner = $"Type '{Name}'";
+		TemplateRendering.EnsureNoNullEntries(Members, nameof(Members), owner);
+		TemplateRendering.EnsureNoNullEntries(NestedClasses, nameof(NestedClasses), owner);
+		TemplateRendering.EnsureNoNullEntries(PositionalParameters, nameof(PositionalParameters), owner);
 
 		foreach (MemberTemplate member in Members)
 		{

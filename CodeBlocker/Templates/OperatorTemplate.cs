@@ -60,14 +60,16 @@ public class OperatorTemplate : MemberTemplate
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">
-	/// <see cref="Kind"/> is not an <see cref="OperatorKind"/> value. Nothing is written.
+	/// <see cref="Kind"/> is not an <see cref="OperatorKind"/> value, or <see cref="Parameters"/>
+	/// holds a <see langword="null"/> entry. Nothing is written.
 	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
-		// Worked out before anything is written, so an unknown kind cannot leave a half-written
-		// declaration behind.
+		// Checked before anything is written, so an unknown kind or a null parameter cannot leave a
+		// half-written declaration behind.
+		Validate();
 		string signature = Signature;
 
 		// Not through the MemberTemplate implementation: an operator's signature is its symbol and
@@ -80,7 +82,11 @@ public class OperatorTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate() => _ = Signature;
+	internal override void Validate()
+	{
+		string signature = Signature;
+		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Operator '{signature}'");
+	}
 
 	private string Signature => Kind switch
 	{

@@ -39,14 +39,25 @@ public class MethodTemplate : MemberTemplate
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// <see cref="Parameters"/> holds a <see langword="null"/> entry. Nothing is written.
+	/// </exception>
 	public override void WriteTo(CodeBlocker codeBlocker)
 	{
 		Ensure.NotNull(codeBlocker);
 
+		Validate();
 		base.WriteTo(codeBlocker);
 		TemplateRendering.WriteTypeParameterList(codeBlocker, TypeParameters);
 		TemplateRendering.WriteParameterList(codeBlocker, Parameters);
 		TemplateRendering.WriteConstraints(codeBlocker, Constraints);
 		TemplateRendering.WriteBody(codeBlocker, BodyFactory);
+	}
+
+	/// <inheritdoc/>
+	internal override void Validate()
+	{
+		base.Validate();
+		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Method '{Name}'");
 	}
 }

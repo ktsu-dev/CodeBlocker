@@ -192,6 +192,24 @@ internal static class TemplateRendering
 	}
 
 	/// <summary>
+	/// Throws if a template's collection holds a <see langword="null"/> entry, which would otherwise
+	/// only be found partway through writing the declaration that lists it.
+	/// </summary>
+	/// <typeparam name="T">The entry type.</typeparam>
+	/// <param name="entries">The collection to check.</param>
+	/// <param name="collectionName">The collection's property name, for the message.</param>
+	/// <param name="owner">The template that holds the collection, for the message.</param>
+	/// <exception cref="InvalidOperationException">An entry is <see langword="null"/>.</exception>
+	internal static void EnsureNoNullEntries<T>(IEnumerable<T?> entries, string collectionName, string owner)
+		where T : class
+	{
+		if (entries.Any(entry => entry is null))
+		{
+			throw new InvalidOperationException($"{owner} has a null entry in {collectionName}.");
+		}
+	}
+
+	/// <summary>
 	/// Writes a parenthesised, comma-separated parameter list.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
