@@ -14,8 +14,8 @@ public class ConstructorTemplate : MemberTemplate
 	public Collection<ParameterTemplate> Parameters { get; } = [];
 
 	/// <summary>
-	/// Gets the arguments passed to the constructor initialiser, written verbatim. Empty omits the
-	/// clause when <see cref="ChainsToThis"/> is <see langword="false"/> and emits <c>: this()</c>
+	/// Gets the arguments passed to the constructor initialiser, written verbatim. Blank entries are
+	/// skipped. No arguments omits the clause when <see cref="ChainsToThis"/> is <see langword="false"/> and emits <c>: this()</c>
 	/// when <see cref="ChainsToThis"/> is <see langword="true"/>.
 	/// </summary>
 	public Collection<string> BaseParameters { get; } = [];
@@ -62,7 +62,8 @@ public class ConstructorTemplate : MemberTemplate
 
 	private void WriteInitialiserTo(CodeBlocker codeBlocker)
 	{
-		if (!ChainsToThis && BaseParameters.Count == 0)
+		List<string> arguments = TemplateRendering.NonBlank(BaseParameters);
+		if (!ChainsToThis && arguments.Count == 0)
 		{
 			return;
 		}
@@ -70,6 +71,6 @@ public class ConstructorTemplate : MemberTemplate
 		// The initialiser goes on its own line, indented below the declaration it belongs to.
 		codeBlocker.WriteLine();
 		using IndentScope indent = new(codeBlocker);
-		codeBlocker.Write($": {(ChainsToThis ? "this" : "base")}({string.Join(", ", BaseParameters)})");
+		codeBlocker.Write($": {(ChainsToThis ? "this" : "base")}({string.Join(", ", arguments)})");
 	}
 }
