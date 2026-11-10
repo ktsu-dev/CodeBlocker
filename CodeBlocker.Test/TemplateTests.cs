@@ -22,6 +22,80 @@ public sealed class TemplateTests
 
 	private static string Render(TemplateBase template) => Render(template.WriteTo);
 
+	#region Blank entries
+
+	[TestMethod]
+	public void BlankInterfacesWriteNoBaseList() =>
+		Assert.AreEqual(
+			"class C\n{\n}\n",
+			Render(new ClassTemplate { Name = "C", Interfaces = { "", " " } }));
+
+	[TestMethod]
+	public void BlankInterfacesAreSkippedBetweenRealOnes() =>
+		Assert.AreEqual(
+			"class D : B, I\n{\n}\n",
+			Render(new ClassTemplate { Name = "D", BaseClass = "B", Interfaces = { "", "I", "  " } }));
+
+	[TestMethod]
+	public void BlankTypeParametersWriteNoAngleBrackets()
+	{
+		Assert.AreEqual("class E\n{\n}\n", Render(new ClassTemplate { Name = "E", TypeParameters = { "" } }));
+		Assert.AreEqual(
+			"void M<T>() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T", "" }, BodyFactory = _ => { } }));
+	}
+
+	[TestMethod]
+	public void BlankAttributesWriteNoEmptyBrackets()
+	{
+		Assert.AreEqual(
+			"[Obsolete]\nvoid M() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", Attributes = { "", "Obsolete", " " }, BodyFactory = _ => { } }));
+		Assert.AreEqual(
+			"[NotNull] int x",
+			Render(new ParameterTemplate { Type = "int", Name = "x", Attributes = { "", "NotNull" } }));
+	}
+
+	[TestMethod]
+	public void BlankKeywordsWriteNoExtraSpace() =>
+		Assert.AreEqual(
+			"public static void M() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", Keywords = { "public", "", "static" }, BodyFactory = _ => { } }));
+
+	[TestMethod]
+	public void BlankConstraintsWriteNoClauseLine()
+	{
+		Assert.AreEqual(
+			"void M<T>() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T" }, Constraints = { "" }, BodyFactory = _ => { } }));
+		Assert.AreEqual(
+			"void M<T>()\n\twhere T : struct { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T" }, Constraints = { "where T : struct", " " }, BodyFactory = _ => { } }));
+	}
+
+	[TestMethod]
+	public void BlankBaseParametersAreSkipped()
+	{
+		Assert.AreEqual(
+			"F()\n\t: base(a) { }\n",
+			Render(new ConstructorTemplate { Name = "F", BaseParameters = { "a", "" } }));
+		Assert.AreEqual("F() { }\n", Render(new ConstructorTemplate { Name = "F", BaseParameters = { "" } }));
+		Assert.AreEqual(
+			"F()\n\t: this() { }\n",
+			Render(new ConstructorTemplate { Name = "F", ChainsToThis = true, BaseParameters = { " " } }));
+	}
+
+	[TestMethod]
+	public void OnlyBlankFileAttributesKeepTheUsingsInsideTheNamespace()
+	{
+		SourceFileTemplate file = new() { Namespace = "N", Usings = { "System" }, Attributes = { "" } };
+		SourceFileTemplate plain = new() { Namespace = "N", Usings = { "System" } };
+
+		Assert.AreEqual(Render(cb => cb.AddSourceFile(plain)), Render(cb => cb.AddSourceFile(file)));
+	}
+
+	#endregion
+
 	#region ParameterTemplate
 
 	[TestMethod]
