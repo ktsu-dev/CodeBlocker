@@ -1,7 +1,6 @@
-## v2.4.2 (patch)
+## v2.4.3-pre.1 (prerelease)
 
-Changes since v2.4.1:
+Changes since v2.4.2:
 
-- Skip a preprocessor line's text when looking for verbatim strings [patch] (#195) (matt-edmondson)
-- Refuse a null parameter, member or nested type before writing [patch] (#199) (matt-edmondson)
+- Bump the ktsu group with 9 updates (dependabot[bot])
 
