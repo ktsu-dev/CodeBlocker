@@ -130,12 +130,9 @@ public class ClassTemplate : TemplateBase
 			member.Validate(codeBlocker);
 		}
 
-		foreach (ClassTemplate nestedClass in NestedClasses)
+		foreach (ClassTemplate nestedClass in NestedClasses.Where(nested => !codeBlocker.IsChecked(nested)))
 		{
-			if (!codeBlocker.IsChecked(nestedClass))
-			{
-				nestedClass.Validate(codeBlocker);
-			}
+			nestedClass.Validate(codeBlocker);
 		}
 
 		codeBlocker.MarkChecked(this);

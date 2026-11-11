@@ -2234,9 +2234,9 @@ public sealed class TemplateTests
 		SourceFileTemplate file = new() { Classes = { new ClassTemplate { Name = "Outer", NestedClasses = { nested } } } };
 		string inFile = Render(codeBlocker => codeBlocker.AddSourceFile(file));
 
-		StringAssert.Contains(alone, "public int First => 2;");
-		StringAssert.Contains(inFile, "public int First => 2;");
-		StringAssert.Contains(inFile, "public int Second => 3;");
+		Assert.Contains("public int First => 2;", alone);
+		Assert.Contains("public int First => 2;", inFile);
+		Assert.Contains("public int Second => 3;", inFile);
 	}
 
 	[TestMethod]
