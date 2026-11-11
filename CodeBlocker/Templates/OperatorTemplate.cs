@@ -80,9 +80,9 @@ public class OperatorTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
-		base.Validate();
+		base.Validate(codeBlocker);
 		_ = Signature;
 	}
 

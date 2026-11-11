@@ -59,7 +59,7 @@ public static class SourceFileTemplateExtensions
 
 		// Checked before the header is written, so a type that would be refused leaves nothing
 		// behind rather than a file holding only the types before it.
-		ValidateAll(template.Classes);
+		ValidateAll(codeBlocker, template.Classes);
 
 		codeBlocker.AddDocumentation(template.Documentation);
 		codeBlocker.AddComments(template.Comments);
@@ -102,7 +102,7 @@ public static class SourceFileTemplateExtensions
 		Ensure.NotNull(classes);
 
 		List<ClassTemplate> classList = [.. classes];
-		ValidateAll(classList);
+		ValidateAll(codeBlocker, classList);
 
 		foreach (ClassTemplate classTemplate in classList)
 		{
@@ -113,12 +113,12 @@ public static class SourceFileTemplateExtensions
 		return codeBlocker;
 	}
 
-	private static void ValidateAll(IEnumerable<ClassTemplate> classes)
+	private static void ValidateAll(CodeBlocker codeBlocker, IEnumerable<ClassTemplate> classes)
 	{
 		foreach (ClassTemplate classTemplate in classes)
 		{
 			Ensure.NotNull(classTemplate);
-			classTemplate.Validate();
+			classTemplate.Validate(codeBlocker);
 		}
 	}
 }

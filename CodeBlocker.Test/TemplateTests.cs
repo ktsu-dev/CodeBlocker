@@ -903,6 +903,62 @@ public sealed class TemplateTests
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
+	private static void WritePlaceholderComment(CodeBlocker codeBlocker) => codeBlocker.WriteLine("// placeholder");
+
+	private static void WriteEmptyDebugConditional(CodeBlocker codeBlocker)
+	{
+		codeBlocker.WriteLine("#if DEBUG");
+		codeBlocker.WriteLine("#endif");
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOfOnlyACommentIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "int P => ;// placeholder" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", ExpressionBodyFactory = WritePlaceholderComment };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionAccessorOfOnlyACommentIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "get => ;// placeholder" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(WritePlaceholderComment) };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.ThrowsExactly<InvalidOperationException>(() => AccessorTemplate.Expression(WritePlaceholderComment).WriteTo(codeBlocker, "get"));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOfOnlyDirectivesIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "int P =>", then the directives, then a lone ";" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", ExpressionBodyFactory = WriteEmptyDebugConditional };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyWithCodeAroundItsCommentsAndDirectivesIsStillWritten()
+	{
+		Assert.AreEqual("public int X => x; // c\n", RenderExpressionBody(codeBlocker => codeBlocker.Write("x // c")));
+		Assert.AreEqual(
+			"int P =>\n#if DEBUG\n1\n#else\n2\n#endif\n;\n",
+			Render(new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = WriteDebugConditional }));
+	}
+
 	#endregion
 
 	#region MethodTemplate
@@ -1448,6 +1504,51 @@ public sealed class TemplateTests
 		InvalidOperationException exception =
 			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
 		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	public static IEnumerable<object[]> PropertiesWhoseExpressionWritesNothing =>
+	[
+		["empty expression body", new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = _ => { } }],
+		["empty expression accessor", new PropertyTemplate { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(_ => { }) }],
+		["comment-only expression body", new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = WritePlaceholderComment }],
+		["comment-only expression accessor", new PropertyTemplate { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(WritePlaceholderComment) }],
+	];
+
+	[TestMethod]
+	[DynamicData(nameof(PropertiesWhoseExpressionWritesNothing))]
+	public void AClassWithAPropertyWhoseExpressionWritesNothingWritesNothing(string description, PropertyTemplate property)
+	{
+		// The empty expression used to be found only when the property was written, inside the
+		// class's body, so the class was closed without it and every member after it (#183).
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members = { new FieldTemplate { Type = "int", Name = "f" }, property, new FieldTemplate { Type = "int", Name = "g" } },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type), description);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString(), description);
+	}
+
+	[TestMethod]
+	public void ASourceFileWithAnEmptyExpressionBodyWritesNothing()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Classes =
+			{
+				new ClassTemplate { Name = "Good" },
+				new ClassTemplate { Name = "Bad", Members = { new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = _ => { } } } },
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddSourceFile(file));
 		Assert.AreEqual(string.Empty, codeBlocker.ToString());
 	}
 
