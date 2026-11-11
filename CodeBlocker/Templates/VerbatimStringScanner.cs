@@ -34,6 +34,24 @@ internal static class VerbatimStringScanner
 	}
 
 	/// <summary>
+	/// Marks each character of <paramref name="text"/> that lies inside a comment belonging to the
+	/// code itself: a <c>//</c> line comment or a <c>/* */</c> block comment.
+	/// </summary>
+	/// <param name="text">The C# fragment to scan.</param>
+	/// <returns>
+	/// One flag per character of <paramref name="text"/>, true where that character is part of a
+	/// comment, delimiters included. A <c>//</c> or <c>/*</c> inside a string or character literal
+	/// starts no comment. An unterminated block comment runs to the end of the text.
+	/// </returns>
+	internal static bool[] FindCommentText(string text)
+	{
+		bool[] inCommentText = new bool[text.Length];
+		int position = 0;
+		ScanCode(text, ref position, new bool[text.Length], lineCommentStarts: null, inCommentText: inCommentText);
+		return inCommentText;
+	}
+
+	/// <summary>
 	/// Finds the line comments in <paramref name="text"/> that belong to the code itself.
 	/// </summary>
 	/// <param name="text">The C# fragment to scan.</param>
@@ -61,14 +79,18 @@ internal static class VerbatimStringScanner
 	/// they are not wanted, and for an interpolation hole.
 	/// </param>
 	/// <param name="isInterpolationHole">Whether the walk is inside an interpolation hole.</param>
-	private static void ScanCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool isInterpolationHole = false)
+	/// <param name="inCommentText">
+	/// Receives the comment flags, at the top level only; <see langword="null"/> when they are not
+	/// wanted, and for an interpolation hole.
+	/// </param>
+	private static void ScanCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool isInterpolationHole = false, bool[]? inCommentText = null)
 	{
 		int braceDepth = 0;
 		int bracketDepth = 0;
 		bool atLineStart = !isInterpolationHole;
 		while (position < text.Length)
 		{
-			if (TrySkipNonCode(text, ref position, inVerbatimText, lineCommentStarts, ref atLineStart, isInterpolationHole))
+			if (TrySkipNonCode(text, ref position, inVerbatimText, lineCommentStarts, inCommentText, ref atLineStart, isInterpolationHole))
 			{
 				continue;
 			}
@@ -97,7 +119,7 @@ internal static class VerbatimStringScanner
 	/// <paramref name="position"/>, if one does, recording a line comment's start on the way.
 	/// </summary>
 	/// <returns>True when something was skipped.</returns>
-	private static bool TrySkipNonCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, ref bool atLineStart, bool isInterpolationHole)
+	private static bool TrySkipNonCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool[]? inCommentText, ref bool atLineStart, bool isInterpolationHole)
 	{
 		if (TrySkipPreprocessorLine(text, ref position, ref atLineStart, isInterpolationHole))
 		{
@@ -109,7 +131,7 @@ internal static class VerbatimStringScanner
 			lineCommentStarts.Add(position);
 		}
 
-		if (!TrySkipCommentOrLiteral(text, ref position, inVerbatimText))
+		if (!TrySkipCommentOrLiteral(text, ref position, inVerbatimText, inCommentText))
 		{
 			return false;
 		}
@@ -202,12 +224,18 @@ internal static class VerbatimStringScanner
 	/// <summary>
 	/// Moves past the comment or literal that starts at <paramref name="position"/>, if one does.
 	/// </summary>
-	private static bool TrySkipCommentOrLiteral(string text, ref int position, bool[] inVerbatimText)
+	/// <param name="text">The C# fragment to scan.</param>
+	/// <param name="position">Where to start, and on return where the skip stopped.</param>
+	/// <param name="inVerbatimText">Receives the verbatim literal flags.</param>
+	/// <param name="inCommentText">Receives the comment flags, or <see langword="null"/> when they are not wanted.</param>
+	private static bool TrySkipCommentOrLiteral(string text, ref int position, bool[] inVerbatimText, bool[]? inCommentText)
 	{
 		char c = text[position];
+		int start = position;
 		if (c == '/' && At(text, position + 1) == '/')
 		{
 			SkipLineComment(text, ref position);
+			MarkComment(inCommentText, start, position);
 			return true;
 		}
 
@@ -215,6 +243,7 @@ internal static class VerbatimStringScanner
 		{
 			int end = text.IndexOf("*/", position + 2, StringComparison.Ordinal);
 			position = end < 0 ? text.Length : end + 2;
+			MarkComment(inCommentText, start, position);
 			return true;
 		}
 
@@ -248,6 +277,19 @@ internal static class VerbatimStringScanner
 		}
 
 		return false;
+	}
+
+	private static void MarkComment(bool[]? inCommentText, int start, int end)
+	{
+		if (inCommentText is null)
+		{
+			return;
+		}
+
+		for (int i = start; i < end; i++)
+		{
+			inCommentText[i] = true;
+		}
 	}
 
 	private static char At(string text, int position) => position < text.Length ? text[position] : '\0';

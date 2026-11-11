@@ -80,7 +80,11 @@ public class OperatorTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate() => _ = Signature;
+	internal override void Validate(CodeBlocker codeBlocker)
+	{
+		base.Validate(codeBlocker);
+		_ = Signature;
+	}
 
 	private string Signature => Kind switch
 	{

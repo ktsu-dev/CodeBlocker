@@ -57,6 +57,80 @@ public sealed class TemplateTests
 			Render(template));
 	}
 
+	#region Blank entries
+
+	[TestMethod]
+	public void BlankInterfacesWriteNoBaseList() =>
+		Assert.AreEqual(
+			"class C\n{\n}\n",
+			Render(new ClassTemplate { Name = "C", Interfaces = { "", " " } }));
+
+	[TestMethod]
+	public void BlankInterfacesAreSkippedBetweenRealOnes() =>
+		Assert.AreEqual(
+			"class D : B, I\n{\n}\n",
+			Render(new ClassTemplate { Name = "D", BaseClass = "B", Interfaces = { "", "I", "  " } }));
+
+	[TestMethod]
+	public void BlankTypeParametersWriteNoAngleBrackets()
+	{
+		Assert.AreEqual("class E\n{\n}\n", Render(new ClassTemplate { Name = "E", TypeParameters = { "" } }));
+		Assert.AreEqual(
+			"void M<T>() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T", "" }, BodyFactory = _ => { } }));
+	}
+
+	[TestMethod]
+	public void BlankAttributesWriteNoEmptyBrackets()
+	{
+		Assert.AreEqual(
+			"[Obsolete]\nvoid M() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", Attributes = { "", "Obsolete", " " }, BodyFactory = _ => { } }));
+		Assert.AreEqual(
+			"[NotNull] int x",
+			Render(new ParameterTemplate { Type = "int", Name = "x", Attributes = { "", "NotNull" } }));
+	}
+
+	[TestMethod]
+	public void BlankKeywordsWriteNoExtraSpace() =>
+		Assert.AreEqual(
+			"public static void M() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", Keywords = { "public", "", "static" }, BodyFactory = _ => { } }));
+
+	[TestMethod]
+	public void BlankConstraintsWriteNoClauseLine()
+	{
+		Assert.AreEqual(
+			"void M<T>() { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T" }, Constraints = { "" }, BodyFactory = _ => { } }));
+		Assert.AreEqual(
+			"void M<T>()\n\twhere T : struct { }\n",
+			Render(new MethodTemplate { Name = "M", Type = "void", TypeParameters = { "T" }, Constraints = { "where T : struct", " " }, BodyFactory = _ => { } }));
+	}
+
+	[TestMethod]
+	public void BlankBaseParametersAreSkipped()
+	{
+		Assert.AreEqual(
+			"F()\n\t: base(a) { }\n",
+			Render(new ConstructorTemplate { Name = "F", BaseParameters = { "a", "" } }));
+		Assert.AreEqual("F() { }\n", Render(new ConstructorTemplate { Name = "F", BaseParameters = { "" } }));
+		Assert.AreEqual(
+			"F()\n\t: this() { }\n",
+			Render(new ConstructorTemplate { Name = "F", ChainsToThis = true, BaseParameters = { " " } }));
+	}
+
+	[TestMethod]
+	public void OnlyBlankFileAttributesKeepTheUsingsInsideTheNamespace()
+	{
+		SourceFileTemplate file = new() { Namespace = "N", Usings = { "System" }, Attributes = { "" } };
+		SourceFileTemplate plain = new() { Namespace = "N", Usings = { "System" } };
+
+		Assert.AreEqual(Render(cb => cb.AddSourceFile(plain)), Render(cb => cb.AddSourceFile(file)));
+	}
+
+	#endregion
+
 	#region ParameterTemplate
 
 	[TestMethod]
@@ -565,6 +639,48 @@ public sealed class TemplateTests
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
+	[TestMethod]
+	public void AnExpressionBodyWithADefaultValueIsRejectedBeforeAnythingIsWritten()
+	{
+		// It used to render "int P => x;" and drop the "= 5" without a word.
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "P",
+			DefaultValue = "5",
+			ExpressionBodyFactory = codeBlocker => codeBlocker.Write("x"),
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AClassWithAnExpressionBodiedPropertyThatHasADefaultValueWritesNothing()
+	{
+		ClassTemplate type = new() { Name = "C" };
+		type.Members.Add(new FieldTemplate { Name = "a", Type = "int" });
+		type.Members.Add(new PropertyTemplate
+		{
+			Type = "int",
+			Name = "P",
+			DefaultValue = "5",
+			ExpressionBodyFactory = codeBlocker => codeBlocker.Write("x"),
+		});
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
 	private static string RenderExpressionBody(Action<CodeBlocker> expressionFactory) =>
 		Render(new PropertyTemplate { Type = "int", Name = "X", Keywords = { "public" }, ExpressionBodyFactory = expressionFactory });
 
@@ -822,6 +938,62 @@ public sealed class TemplateTests
 		Assert.AreEqual("int a;\n", codeBlocker.ToString());
 	}
 
+	private static void WritePlaceholderComment(CodeBlocker codeBlocker) => codeBlocker.WriteLine("// placeholder");
+
+	private static void WriteEmptyDebugConditional(CodeBlocker codeBlocker)
+	{
+		codeBlocker.WriteLine("#if DEBUG");
+		codeBlocker.WriteLine("#endif");
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOfOnlyACommentIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "int P => ;// placeholder" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", ExpressionBodyFactory = WritePlaceholderComment };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionAccessorOfOnlyACommentIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "get => ;// placeholder" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(WritePlaceholderComment) };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.ThrowsExactly<InvalidOperationException>(() => AccessorTemplate.Expression(WritePlaceholderComment).WriteTo(codeBlocker, "get"));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyOfOnlyDirectivesIsRejectedBeforeAnythingIsWritten()
+	{
+		// Used to render "int P =>", then the directives, then a lone ";" (CS1525).
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		PropertyTemplate property = new() { Type = "int", Name = "P", ExpressionBodyFactory = WriteEmptyDebugConditional };
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => property.WriteTo(codeBlocker));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AnExpressionBodyWithCodeAroundItsCommentsAndDirectivesIsStillWritten()
+	{
+		Assert.AreEqual("public int X => x; // c\n", RenderExpressionBody(codeBlocker => codeBlocker.Write("x // c")));
+		Assert.AreEqual(
+			"int P =>\n#if DEBUG\n1\n#else\n2\n#endif\n;\n",
+			Render(new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = WriteDebugConditional }));
+	}
+
 	#endregion
 
 	#region MethodTemplate
@@ -922,6 +1094,65 @@ public sealed class TemplateTests
 			}));
 
 	[TestMethod]
+	public void ABodyThatWritesOnlyABlockCommentIsBraced() =>
+		// "void M() /* nothing to do */" has no body at all (CS1002).
+		Assert.AreEqual(
+			"void M()\n{\n\t/* nothing to do */\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* nothing to do */"),
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyAMultiLineBlockCommentIsBraced() =>
+		Assert.AreEqual(
+			"void M()\n{\n\t/* nothing\n\t   to do */\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "M",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.WriteLine("/* nothing");
+					codeBlocker.WriteLine("   to do */");
+				},
+			}));
+
+	[TestMethod]
+	public void ABodyThatWritesOnlyBlockAndLineCommentsIsBraced() =>
+		Assert.AreEqual(
+			"C()\n{\n\t/* a */ // b\n}\n",
+			Render(new ConstructorTemplate
+			{
+				Name = "C",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* a */ // b"),
+			}));
+
+	[TestMethod]
+	public void ABodyWithCodeAfterABlockCommentStaysOnTheDeclarationLine() =>
+		Assert.AreEqual(
+			"int M() /* note */ => 1;\n",
+			Render(new MethodTemplate
+			{
+				Type = "int",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("/* note */ => 1;"),
+			}));
+
+	[TestMethod]
+	public void ABlockCommentOpenerInsideAStringIsCode() =>
+		Assert.AreEqual(
+			"string M() => \"/* not a comment */\";\n",
+			Render(new MethodTemplate
+			{
+				Type = "string",
+				Name = "M",
+				BodyFactory = codeBlocker => codeBlocker.WriteLine("=> \"/* not a comment */\";"),
+			}));
+
+	[TestMethod]
 	public void ABodyThatWritesOnlyAnEmptyPragmaScopeIsBraced() =>
 		Assert.AreEqual(
 			"void M()\n{\n\t#pragma warning disable CS0168\n\t#pragma warning restore CS0168\n}\n",
@@ -985,6 +1216,82 @@ public sealed class TemplateTests
 
 		Assert.AreEqual("public void Run()\n{\n\tFirst();\n\n\tSecond();\n}\n", Render(method));
 	}
+
+	[TestMethod]
+	public void ABracedBodyDropsTheBlankLinesAroundIt()
+	{
+		ClassTemplate type = new() { Name = "C" };
+		type.Members.Add(new MethodTemplate
+		{
+			Type = "void",
+			Name = "A",
+			BodyFactory = codeBlocker =>
+			{
+				using (new Scope(codeBlocker))
+				{
+					codeBlocker.WriteLine("x();");
+				}
+
+				codeBlocker.NewLine();
+			},
+		});
+		type.Members.Add(new MethodTemplate
+		{
+			Type = "void",
+			Name = "B",
+			BodyFactory = codeBlocker =>
+			{
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("{");
+				codeBlocker.WriteLine("}");
+			},
+		});
+
+		// One blank line between the members, and each opening brace directly under its signature.
+		Assert.AreEqual(
+			"class C\n{\n\tvoid A()\n\t{\n\t\tx();\n\t}\n\n\tvoid B()\n\t{\n\t}\n}\n",
+			Render(type));
+	}
+
+	[TestMethod]
+	public void ABracedBodyKeepsItsInteriorBlankLinesWhenItsOuterOnesAreDropped() =>
+		Assert.AreEqual(
+			"void Run()\n{\n\tFirst();\n\n\tSecond();\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "Run",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.NewLine();
+					codeBlocker.NewLine();
+					using (new Scope(codeBlocker))
+					{
+						codeBlocker.WriteLine("First();");
+						codeBlocker.NewLine();
+						codeBlocker.WriteLine("Second();");
+					}
+
+					codeBlocker.NewLine();
+					codeBlocker.NewLine();
+				},
+			}));
+
+	[TestMethod]
+	public void ACommentOnlyBodyDropsTheBlankLinesAroundIt() =>
+		Assert.AreEqual(
+			"void Reset()\n{\n\t// nothing to reset\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "Reset",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.NewLine();
+					codeBlocker.WriteLine("// nothing to reset");
+					codeBlocker.NewLine();
+				},
+			}));
 
 	[TestMethod]
 	public void AMultiLineBodyIsIndentedToWhereItIsSpliced()
@@ -1232,6 +1539,51 @@ public sealed class TemplateTests
 		InvalidOperationException exception =
 			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
 		Assert.Contains("'P'", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	public static IEnumerable<object[]> PropertiesWhoseExpressionWritesNothing =>
+	[
+		["empty expression body", new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = _ => { } }],
+		["empty expression accessor", new PropertyTemplate { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(_ => { }) }],
+		["comment-only expression body", new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = WritePlaceholderComment }],
+		["comment-only expression accessor", new PropertyTemplate { Type = "int", Name = "P", Getter = AccessorTemplate.Expression(WritePlaceholderComment) }],
+	];
+
+	[TestMethod]
+	[DynamicData(nameof(PropertiesWhoseExpressionWritesNothing))]
+	public void AClassWithAPropertyWhoseExpressionWritesNothingWritesNothing(string description, PropertyTemplate property)
+	{
+		// The empty expression used to be found only when the property was written, inside the
+		// class's body, so the class was closed without it and every member after it (#183).
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members = { new FieldTemplate { Type = "int", Name = "f" }, property, new FieldTemplate { Type = "int", Name = "g" } },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type), description);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString(), description);
+	}
+
+	[TestMethod]
+	public void ASourceFileWithAnEmptyExpressionBodyWritesNothing()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Classes =
+			{
+				new ClassTemplate { Name = "Good" },
+				new ClassTemplate { Name = "Bad", Members = { new PropertyTemplate { Type = "int", Name = "P", ExpressionBodyFactory = _ => { } } } },
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddSourceFile(file));
 		Assert.AreEqual(string.Empty, codeBlocker.ToString());
 	}
 
@@ -1572,6 +1924,20 @@ public sealed class TemplateTests
 		Assert.AreEqual(string.Empty, Render(codeBlocker => codeBlocker.AddSourceFile(new SourceFileTemplate())));
 
 	[TestMethod]
+	public void ASourceFileSkipsBlankUsings()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System", "", "System.Linq" },
+		};
+
+		Assert.AreEqual(
+			"namespace Contoso;\n\nusing System;\nusing System.Linq;\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
 	public void ASourceFileWithAnInvalidClassWritesNothing()
 	{
 		SourceFileTemplate file = new()
@@ -1589,6 +1955,60 @@ public sealed class TemplateTests
 		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
 
 		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddSourceFile(file));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void AClassWithAMemberWhoseDocCommentCannotBeWrittenWritesNothing()
+	{
+		// It used to write "public class C { void A() { } }" up to B, then throw.
+		MethodTemplate b = new() { Type = "void", Name = "B", BodyFactory = _ => { }, Documentation = new DocComment() };
+		b.Documentation.Params.Add(new DocTag { Name = "a\nb", Text = "t" });
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Keywords = { "public" },
+			Members =
+			{
+				new MethodTemplate { Type = "void", Name = "A", BodyFactory = _ => { } },
+				b,
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int x;");
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddClass(type));
+		Assert.AreEqual("int x;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ASourceFileWhoseLaterClassHasADocCommentThatCannotBeWrittenWritesNothing()
+	{
+		ClassTemplate second = new() { Name = "Second", Documentation = new DocComment { Summary = "s" } };
+		second.Documentation.SeeAlso.Add("A\nB");
+		SourceFileTemplate file = new()
+		{
+			Namespace = "Contoso",
+			Usings = { "System" },
+			Classes = { new ClassTemplate { Name = "First" }, second },
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddSourceFile(file));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANestedClassWhoseDocCommentCannotBeWrittenLeavesTheOuterClassUnwritten()
+	{
+		ClassTemplate inner = new() { Name = "Inner", Documentation = new DocComment { InheritDoc = true, InheritDocCref = "X\r\nY" } };
+		ClassTemplate outer = new() { Name = "Outer", NestedClasses = { inner } };
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddClass(outer));
 		Assert.AreEqual(string.Empty, codeBlocker.ToString());
 	}
 

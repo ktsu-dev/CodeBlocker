@@ -73,7 +73,7 @@ public class ClassTemplate : TemplateBase
 		// Everything is checked before the doc comment, attributes and modifiers are written, so a
 		// failing check cannot leave an unfinished declaration behind, nor a closed body that is
 		// silently missing the failing member and everything after it.
-		Validate();
+		Validate(codeBlocker);
 		string keyword = TypeKindKeywords.For(Kind);
 		base.WriteTo(codeBlocker);
 
@@ -102,18 +102,19 @@ public class ClassTemplate : TemplateBase
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
+		base.Validate(codeBlocker);
 		_ = TypeKindKeywords.For(Kind);
 
 		foreach (MemberTemplate member in Members)
 		{
-			member.Validate();
+			member.Validate(codeBlocker);
 		}
 
 		foreach (ClassTemplate nestedClass in NestedClasses)
 		{
-			nestedClass.Validate();
+			nestedClass.Validate(codeBlocker);
 		}
 	}
 
@@ -129,13 +130,8 @@ public class ClassTemplate : TemplateBase
 
 	private void WriteBaseClassAndInterfacesTo(CodeBlocker codeBlocker)
 	{
-		List<string> baseAndInterfaces = [];
-		if (!string.IsNullOrEmpty(BaseClass))
-		{
-			baseAndInterfaces.Add(BaseClass);
-		}
-
-		baseAndInterfaces.AddRange(Interfaces);
+		// Blank entries are skipped, so an all-blank list writes no " : " at all.
+		List<string> baseAndInterfaces = TemplateRendering.NonBlank([BaseClass, .. Interfaces]);
 
 		if (baseAndInterfaces.Count == 0)
 		{

@@ -102,9 +102,18 @@ internal static class TemplateRendering
 	/// would land at the current indent and every following line would keep the indentation it had
 	/// in its own buffer, which is why a nested body used to come out flush against the left margin.
 	/// </remarks>
-	internal static void SpliceFragment(CodeBlocker parent, string fragment)
+	internal static void SpliceFragment(CodeBlocker parent, string fragment) =>
+		SpliceLines(parent, SplitLines(parent, fragment));
+
+	/// <summary>
+	/// Writes already-split lines at the parent's current indent, as <see cref="SpliceFragment"/> does
+	/// for a whole fragment.
+	/// </summary>
+	/// <param name="parent">The <see cref="CodeBlocker"/> to write the lines to.</param>
+	/// <param name="lines">The lines, as <see cref="SplitLines"/> returns them.</param>
+	private static void SpliceLines(CodeBlocker parent, IEnumerable<string> lines)
 	{
-		foreach (string line in SplitLines(parent, fragment))
+		foreach (string line in lines)
 		{
 			if (line.Length == 0)
 			{
@@ -192,6 +201,16 @@ internal static class TemplateRendering
 	}
 
 	/// <summary>
+	/// Drops the <see langword="null"/>, empty and whitespace entries from a list of verbatim
+	/// fragments, so that a generator can pass <c>condition ? "IFoo" : ""</c> without the blank
+	/// entry turning into broken syntax such as <c>class C : </c>, <c>&lt;&gt;</c> or <c>[]</c>.
+	/// </summary>
+	/// <param name="entries">The entries, in order.</param>
+	/// <returns>The entries that have text, in the same order.</returns>
+	internal static List<string> NonBlank(IEnumerable<string?> entries) =>
+		[.. entries.Where(entry => !string.IsNullOrWhiteSpace(entry)).Select(entry => entry!)];
+
+	/// <summary>
 	/// Writes a parenthesised, comma-separated parameter list.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
@@ -213,15 +232,16 @@ internal static class TemplateRendering
 	/// Writes the angle-bracketed type parameter list, or nothing when there are none.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="typeParameters">The type parameter names.</param>
-	internal static void WriteTypeParameterList(CodeBlocker codeBlocker, IReadOnlyCollection<string> typeParameters)
+	/// <param name="typeParameters">The type parameter names. Blank entries are skipped.</param>
+	internal static void WriteTypeParameterList(CodeBlocker codeBlocker, IEnumerable<string> typeParameters)
 	{
-		if (typeParameters.Count == 0)
+		List<string> names = NonBlank(typeParameters);
+		if (names.Count == 0)
 		{
 			return;
 		}
 
-		codeBlocker.Write($"<{string.Join(", ", typeParameters)}>");
+		codeBlocker.Write($"<{string.Join(", ", names)}>");
 	}
 
 	/// <summary>
@@ -229,15 +249,16 @@ internal static class TemplateRendering
 	/// declaration it constrains.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="constraints">The constraint clauses, each written verbatim.</param>
+	/// <param name="constraints">The constraint clauses, each written verbatim. Blank entries are skipped.</param>
 	/// <remarks>
 	/// The last clause is left unterminated so that whatever follows still sees an open declaration
 	/// line: a member with no body attaches its semicolon to the clause
 	/// (<c>where T : struct;</c>), and an expression body attaches its arrow.
 	/// </remarks>
-	internal static void WriteConstraints(CodeBlocker codeBlocker, IReadOnlyCollection<string> constraints)
+	internal static void WriteConstraints(CodeBlocker codeBlocker, IEnumerable<string> constraints)
 	{
-		if (constraints.Count == 0)
+		List<string> clauses = NonBlank(constraints);
+		if (clauses.Count == 0)
 		{
 			return;
 		}
@@ -246,8 +267,8 @@ internal static class TemplateRendering
 		codeBlocker.WriteLine();
 
 		using IndentScope indent = new(codeBlocker);
-		int remaining = constraints.Count;
-		foreach (string constraint in constraints)
+		int remaining = clauses.Count;
+		foreach (string constraint in clauses)
 		{
 			remaining--;
 			if (remaining == 0)
@@ -279,7 +300,12 @@ internal static class TemplateRendering
 		}
 
 		string body = RenderFragment(codeBlocker, bodyFactory);
-		string[] lines = SplitLines(codeBlocker, body);
+
+		// Blank lines before the first and after the last line of the body are spacing the factory
+		// left around it, not part of it: spliced, a leading one would separate the declaration from
+		// its opening brace and a trailing one would add to the blank line between members. Blank
+		// lines inside the body are kept.
+		string[] lines = TrimBlankLines(SplitLines(codeBlocker, body));
 
 		// Blank lines carry no body of their own, so they are left out when deciding its shape. A
 		// factory that only wrote spacing, such as a NewLine after a loop over an empty collection,
@@ -302,7 +328,7 @@ internal static class TemplateRendering
 			codeBlocker.WriteLine();
 			using (new Scope(codeBlocker))
 			{
-				SpliceFragment(codeBlocker, body);
+				SpliceLines(codeBlocker, lines);
 			}
 
 			return;
@@ -318,7 +344,24 @@ internal static class TemplateRendering
 
 		// A braced body starts on the line after the declaration.
 		codeBlocker.WriteLine();
-		SpliceFragment(codeBlocker, body);
+		SpliceLines(codeBlocker, lines);
+	}
+
+	/// <summary>
+	/// Drops the empty lines at the start and end of a body's lines, keeping those between them.
+	/// </summary>
+	/// <param name="lines">The lines, as <see cref="SplitLines"/> returns them.</param>
+	/// <returns>The lines from the first non-empty one to the last, or none if every line is empty.</returns>
+	private static string[] TrimBlankLines(string[] lines)
+	{
+		int first = Array.FindIndex(lines, line => line.Length != 0);
+		if (first < 0)
+		{
+			return [];
+		}
+
+		int last = Array.FindLastIndex(lines, line => line.Length != 0);
+		return [.. lines.Skip(first).Take(last - first + 1)];
 	}
 
 	/// <summary>
@@ -332,17 +375,21 @@ internal static class TemplateRendering
 	/// <param name="owner">Names the declaration in the exception message, for example <c>Property 'P'</c>.</param>
 	/// <returns>The expression's lines, for <see cref="WriteExpressionBody"/>.</returns>
 	/// <exception cref="InvalidOperationException">
-	/// The callback wrote nothing but blank lines. An expression body has no valid empty form: it
-	/// would render as <c>=&gt; ;</c>, which does not compile.
+	/// The callback wrote nothing but blank lines, line comments and preprocessor directives. An
+	/// expression body has no valid empty form: it would render as <c>=&gt; ;</c>, which does not
+	/// compile.
 	/// </exception>
 	internal static string[] RenderExpression(CodeBlocker codeBlocker, Action<CodeBlocker>? expressionFactory, string owner)
 	{
 		string[] lines = SplitLines(codeBlocker, RenderFragment(codeBlocker, expressionFactory));
-		if (lines.All(string.IsNullOrWhiteSpace))
+		// A comment or directive is no more an expression than a blank line is: a placeholder
+		// comment would otherwise take the semicolon in front of it and render as "=> ;// ...".
+		if (!HasCode(lines))
 		{
 			throw new InvalidOperationException(
-				$"{owner} has an expression body whose callback wrote no expression, which would render as " +
-				"\"=> ;\". Write an expression, or use a block body or an automatic accessor instead.");
+				$"{owner} has an expression body whose callback wrote no expression, only blank lines, " +
+				"comments or directives, which would render as \"=> ;\". Write an expression, or use a " +
+				"block body or an automatic accessor instead.");
 		}
 
 		return lines;
@@ -463,17 +510,44 @@ internal static class TemplateRendering
 	private static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
 
 	/// <summary>
-	/// Reports whether any line of a fragment holds code: something other than a line comment or a
-	/// preprocessor directive.
+	/// Reports whether any line of a fragment holds code: something other than a comment, line or
+	/// block, or a preprocessor directive.
 	/// </summary>
 	/// <param name="lines">The lines of a fragment, as <see cref="SplitLines"/> returns them.</param>
 	/// <returns><see langword="true"/> if at least one line has code on it.</returns>
+	/// <remarks>
+	/// The lines are scanned together, so a block comment that spans several lines is not code on
+	/// any of them, and a <c>/*</c> or <c>//</c> inside a string literal is code, not a comment.
+	/// </remarks>
 	private static bool HasCode(string[] lines)
 	{
-		int[] codeEnds = FindCodeEnds(lines);
-		for (int i = 0; i < lines.Length; i++)
+		bool[] inComment = VerbatimStringScanner.FindCommentText(string.Join("\n", lines));
+		int lineStart = 0;
+		foreach (string line in lines)
 		{
-			if (IsCode(lines[i][..codeEnds[i]]))
+			if (!IsDirective(line) && HasCodeOutsideComments(line, inComment, lineStart))
+			{
+				return true;
+			}
+
+			lineStart += line.Length + 1;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Reports whether a line has anything other than whitespace outside its comments.
+	/// </summary>
+	/// <param name="line">The line to check.</param>
+	/// <param name="inComment">The comment flags for the whole fragment.</param>
+	/// <param name="lineStart">Where <paramref name="line"/> starts in the fragment.</param>
+	/// <returns><see langword="true"/> if the line has code on it.</returns>
+	private static bool HasCodeOutsideComments(string line, bool[] inComment, int lineStart)
+	{
+		for (int i = 0; i < line.Length; i++)
+		{
+			if (!inComment[lineStart + i] && !char.IsWhiteSpace(line[i]))
 			{
 				return true;
 			}

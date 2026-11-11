@@ -88,13 +88,17 @@ public abstract class TemplateBase
 	/// <summary>
 	/// Throws if <see cref="WriteTo"/> would refuse this template, without writing anything.
 	/// </summary>
+	/// <param name="codeBlocker">
+	/// The <see cref="CodeBlocker"/> the template will be written to. Nothing is written to it: it
+	/// supplies the indent and line terminator a callback is rendered with, for a check that can
+	/// only be made by running the callback.
+	/// </param>
 	/// <remarks>
 	/// A container calls this on everything it holds before writing any of it, so a template that
-	/// fails its check cannot leave a container written without it, and the ones after it.
+	/// fails its check cannot leave a container written without it, and the ones after it. The base
+	/// check covers <see cref="Documentation"/>; an override must call it.
 	/// </remarks>
-	internal virtual void Validate()
-	{
-	}
+	internal virtual void Validate(CodeBlocker codeBlocker) => Documentation?.ValidateAttributes();
 
 	/// <summary>
 	/// Writes <c> = value</c> when <see cref="HasDefaultValue"/> is set, as an escaped string literal
@@ -182,7 +186,10 @@ public static class TemplateBaseExtensions
 	/// Writes each attribute on its own line, bracketed.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="attributes">The attributes, each without its square brackets.</param>
+	/// <param name="attributes">
+	/// The attributes, each without its square brackets. Blank entries are skipped rather than
+	/// written as <c>[]</c>.
+	/// </param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <remarks>
 	/// One per line rather than inline: a member carrying several attributes — and generated members
@@ -197,7 +204,7 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(attributes);
 
-		foreach (string attribute in attributes)
+		foreach (string attribute in TemplateRendering.NonBlank(attributes))
 		{
 			codeBlocker.WriteLine($"[{attribute}]");
 		}
@@ -209,7 +216,10 @@ public static class TemplateBaseExtensions
 	/// Writes each attribute bracketed and inline, followed by a space.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="attributes">The attributes, each without its square brackets.</param>
+	/// <param name="attributes">
+	/// The attributes, each without its square brackets. Blank entries are skipped rather than
+	/// written as <c>[]</c>.
+	/// </param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <remarks>
 	/// Used for parameters, where an attribute has to stay on the declaration line.
@@ -222,7 +232,7 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(attributes);
 
-		foreach (string attribute in attributes)
+		foreach (string attribute in TemplateRendering.NonBlank(attributes))
 		{
 			codeBlocker.Write($"[{attribute}] ");
 		}
@@ -234,7 +244,7 @@ public static class TemplateBaseExtensions
 	/// Writes the modifiers space-separated, followed by a trailing space when there is at least one.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
-	/// <param name="keywords">The modifiers, in the order they should appear.</param>
+	/// <param name="keywords">The modifiers, in the order they should appear. Blank entries are skipped.</param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <exception cref="ArgumentNullException">
 	/// <paramref name="codeBlocker"/> or <paramref name="keywords"/> is <see langword="null"/>.
@@ -244,9 +254,10 @@ public static class TemplateBaseExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(keywords);
 
-		if (keywords.Any())
+		List<string> modifiers = TemplateRendering.NonBlank(keywords);
+		if (modifiers.Count > 0)
 		{
-			codeBlocker.Write(string.Join(" ", keywords) + " ");
+			codeBlocker.Write(string.Join(" ", modifiers) + " ");
 		}
 
 		return codeBlocker;

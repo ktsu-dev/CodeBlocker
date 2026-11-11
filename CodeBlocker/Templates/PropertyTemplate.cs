@@ -48,7 +48,8 @@ public class PropertyTemplate : MemberTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">
 	/// <see cref="Getter"/>, <see cref="Setter"/> and <see cref="ExpressionBodyFactory"/> are all
-	/// <see langword="null"/>; or, with no expression body, an accessor's kind is unknown, or is
+	/// <see langword="null"/>; or <see cref="ExpressionBodyFactory"/> is set together with a
+	/// <see cref="TemplateBase.DefaultValue"/>; or, with no expression body, an accessor's kind is unknown, or is
 	/// <see cref="AccessorKind.Expression"/> with no <see cref="AccessorTemplate.BodyFactory"/>; or
 	/// the expression body, or an expression accessor's body, writes no expression. Nothing is
 	/// written in any of these cases.
@@ -57,7 +58,7 @@ public class PropertyTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
-		Validate();
+		ValidateDeclaration(codeBlocker);
 
 		if (ExpressionBodyFactory is not null)
 		{
@@ -85,8 +86,36 @@ public class PropertyTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	/// <remarks>
+	/// The expression body, or an expression accessor's body, is rendered to check that it writes an
+	/// expression, so a class holding this property refuses it before writing its own header rather
+	/// than after the members ahead of it. That runs the callback once more when the property is
+	/// then written.
+	/// </remarks>
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
+		ValidateDeclaration(codeBlocker);
+
+		if (ExpressionBodyFactory is not null)
+		{
+			_ = TemplateRendering.RenderExpression(codeBlocker, ExpressionBodyFactory, $"Property '{Name}'");
+			return;
+		}
+
+		_ = Getter?.RenderExpression(codeBlocker, "get");
+		_ = Setter?.RenderExpression(codeBlocker, SetterKeyword);
+	}
+
+	/// <summary>
+	/// Throws when the property cannot be written whatever its callbacks write: when its doc
+	/// comment is refused, it has no accessors and no expression body, it has both an expression
+	/// body and a default value, or it has an accessor that cannot be written.
+	/// </summary>
+	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> the property will be written to.</param>
+	private void ValidateDeclaration(CodeBlocker codeBlocker)
+	{
+		base.Validate(codeBlocker);
+
 		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
 		{
 			// Writing "Type Name;" here would emit a field, not a property — which is what an
@@ -96,6 +125,16 @@ public class PropertyTemplate : MemberTemplate
 			throw new InvalidOperationException(
 				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
 				"Setter, or ExpressionBodyFactory.");
+		}
+
+		if (ExpressionBodyFactory is not null && HasDefaultValue)
+		{
+			// C# has no initialiser on an expression-bodied property, so writing either one would
+			// silently drop the other.
+			throw new InvalidOperationException(
+				$"Property '{Name}' has both an expression body and a default value. An " +
+				"expression-bodied property cannot have an initialiser; clear ExpressionBodyFactory " +
+				"or DefaultValue.");
 		}
 
 		if (ExpressionBodyFactory is null)
