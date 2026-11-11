@@ -1553,6 +1553,95 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void ANullMethodParameterIsRefusedBeforeTheClassIsWritten()
+	{
+		MethodTemplate method = new() { Name = "M", Type = "void", BodyFactory = _ => { } };
+		method.Parameters.Add(null!);
+		ClassTemplate type = new() { Name = "C", Members = { method } };
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.Contains("'M'", exception.Message);
+		Assert.Contains("Parameters", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullPositionalParameterIsRefusedBeforeTheRecordIsWritten()
+	{
+		ClassTemplate record = new() { Name = "R", Kind = TypeKind.Record };
+		record.PositionalParameters.Add(null!);
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException exception =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(record));
+		Assert.Contains("'R'", exception.Message);
+		Assert.Contains("PositionalParameters", exception.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullConstructorParameterIsRefusedBeforeTheClassIsWritten()
+	{
+		ConstructorTemplate constructor = new() { Name = "C" };
+		constructor.Parameters.Add(null!);
+		ClassTemplate type = new() { Name = "C", Members = { constructor } };
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(type));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullOperatorParameterIsRefusedBeforeTheOperatorIsWritten()
+	{
+		OperatorTemplate op = new() { Type = "Money", Symbol = "-", Keywords = { "public", "static" } };
+		op.Parameters.Add(null!);
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => op.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullMethodParameterIsRefusedWhenTheMethodIsWrittenOnItsOwn()
+	{
+		MethodTemplate method = new() { Name = "M", Type = "void", BodyFactory = _ => { } };
+		method.Parameters.Add(null!);
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.WriteLine("int a;");
+
+		Assert.ThrowsExactly<InvalidOperationException>(() => method.WriteTo(codeBlocker));
+		Assert.AreEqual("int a;\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullMemberOrNestedClassIsRefusedWithTheTypeNamed()
+	{
+		ClassTemplate withNullMember = new() { Name = "A" };
+		withNullMember.Members.Add(null!);
+		ClassTemplate withNullNested = new() { Name = "B" };
+		withNullNested.NestedClasses.Add(null!);
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+
+		InvalidOperationException memberException =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(withNullMember));
+		Assert.Contains("'A'", memberException.Message);
+		InvalidOperationException nestedException =
+			Assert.ThrowsExactly<InvalidOperationException>(() => codeBlocker.AddClass(withNullNested));
+		Assert.Contains("'B'", nestedException.Message);
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void AnInvalidMemberOfANestedClassLeavesTheOuterClassUnwritten()
 	{
 		ClassTemplate inner = new() { Name = "Inner", Members = { InvalidProperty() } };
