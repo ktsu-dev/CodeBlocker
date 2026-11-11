@@ -69,7 +69,7 @@ public class OperatorTemplate : MemberTemplate
 
 		// Checked before anything is written, so an unknown kind or a null parameter cannot leave a
 		// half-written declaration behind.
-		Validate();
+		Validate(codeBlocker);
 		string signature = Signature;
 
 		// Not through the MemberTemplate implementation: an operator's signature is its symbol and
@@ -82,9 +82,9 @@ public class OperatorTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
-		base.Validate();
+		base.Validate(codeBlocker);
 		string signature = Signature;
 		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Operator '{signature}'");
 	}

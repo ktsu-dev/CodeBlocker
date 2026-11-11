@@ -46,7 +46,7 @@ public class ConstructorTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
-		Validate();
+		Validate(codeBlocker);
 		base.WriteTo(codeBlocker);
 		TemplateRendering.WriteParameterList(codeBlocker, Parameters);
 		WriteInitialiserTo(codeBlocker);
@@ -54,9 +54,9 @@ public class ConstructorTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
-		base.Validate();
+		base.Validate(codeBlocker);
 		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Constructor '{Name}'");
 	}
 

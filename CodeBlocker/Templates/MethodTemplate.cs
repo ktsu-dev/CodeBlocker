@@ -46,7 +46,7 @@ public class MethodTemplate : MemberTemplate
 	{
 		Ensure.NotNull(codeBlocker);
 
-		Validate();
+		Validate(codeBlocker);
 		base.WriteTo(codeBlocker);
 		TemplateRendering.WriteTypeParameterList(codeBlocker, TypeParameters);
 		TemplateRendering.WriteParameterList(codeBlocker, Parameters);
@@ -55,9 +55,9 @@ public class MethodTemplate : MemberTemplate
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
-		base.Validate();
+		base.Validate(codeBlocker);
 		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Method '{Name}'");
 	}
 }

@@ -75,7 +75,7 @@ public class ClassTemplate : TemplateBase
 		// Everything is checked before the doc comment, attributes and modifiers are written, so a
 		// failing check cannot leave an unfinished declaration behind, nor a closed body that is
 		// silently missing the failing member and everything after it.
-		Validate();
+		Validate(codeBlocker);
 		string keyword = TypeKindKeywords.For(Kind);
 		base.WriteTo(codeBlocker);
 
@@ -104,9 +104,9 @@ public class ClassTemplate : TemplateBase
 	}
 
 	/// <inheritdoc/>
-	internal override void Validate()
+	internal override void Validate(CodeBlocker codeBlocker)
 	{
-		base.Validate();
+		base.Validate(codeBlocker);
 		_ = TypeKindKeywords.For(Kind);
 
 		// Null entries are refused here rather than found while writing: a null member or nested
@@ -119,12 +119,12 @@ public class ClassTemplate : TemplateBase
 
 		foreach (MemberTemplate member in Members)
 		{
-			member.Validate();
+			member.Validate(codeBlocker);
 		}
 
 		foreach (ClassTemplate nestedClass in NestedClasses)
 		{
-			nestedClass.Validate();
+			nestedClass.Validate(codeBlocker);
 		}
 	}
 
