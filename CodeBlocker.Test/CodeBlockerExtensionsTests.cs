@@ -163,6 +163,30 @@ public sealed class CodeBlockerExtensionsTests
 	}
 
 	[TestMethod]
+	public void BlankUsingEntriesAreSkipped()
+	{
+		// A generator that builds optional usings as `condition ? "Ns" : ""` must not get `using ;`.
+		using CodeBlocker codeBlocker = Create();
+
+		codeBlocker.WriteUsings("System", "", "  ", null!, "System.Linq");
+
+		Assert.AreEqual("using System;\nusing System.Linq;\n\n", codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void OnlyBlankUsingEntriesWriteNothingIncludingTheBlankLine()
+	{
+		using CodeBlocker arrayOverload = Create();
+		using CodeBlocker sequenceOverload = Create();
+
+		arrayOverload.WriteUsings("", " ", "\t");
+		sequenceOverload.WriteUsings(new List<string> { "", " " });
+
+		Assert.AreEqual(string.Empty, arrayOverload.ToString());
+		Assert.AreEqual(string.Empty, sequenceOverload.ToString());
+	}
+
+	[TestMethod]
 	public void APreambleComposesWithConsistentSpacing()
 	{
 		using CodeBlocker codeBlocker = Create();

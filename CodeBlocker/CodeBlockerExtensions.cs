@@ -95,13 +95,15 @@ public static class CodeBlockerExtensions
 
 	/// <summary>
 	/// Writes one <c>using</c> directive per entry followed by a blank line, or nothing at all when
-	/// the sequence is empty.
+	/// the sequence has no namespaces in it.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <param name="usings">
 	/// The namespaces to import, without the <c>using</c> keyword or the trailing semicolon. An
 	/// entry may carry a modifier or alias — <c>static System.Math</c>, <c>Alias = System.Text</c> —
-	/// because it is written verbatim after the keyword.
+	/// because it is written verbatim after the keyword. Entries that are <see langword="null"/>,
+	/// empty or whitespace are skipped, so a generator can pass <c>condition ? "Some.Namespace" : ""</c>
+	/// without producing <c>using ;</c>.
 	/// </param>
 	/// <returns>The same <see cref="CodeBlocker"/>, for chaining.</returns>
 	/// <exception cref="ArgumentNullException">
@@ -115,6 +117,11 @@ public static class CodeBlockerExtensions
 		bool wroteAny = false;
 		foreach (string usingDirective in usings)
 		{
+			if (string.IsNullOrWhiteSpace(usingDirective))
+			{
+				continue;
+			}
+
 			codeBlocker.WriteLine($"using {usingDirective};");
 			wroteAny = true;
 		}
