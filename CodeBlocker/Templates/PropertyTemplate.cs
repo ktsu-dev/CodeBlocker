@@ -48,7 +48,8 @@ public class PropertyTemplate : MemberTemplate
 	/// <exception cref="ArgumentNullException"><paramref name="codeBlocker"/> is <see langword="null"/>.</exception>
 	/// <exception cref="InvalidOperationException">
 	/// <see cref="Getter"/>, <see cref="Setter"/> and <see cref="ExpressionBodyFactory"/> are all
-	/// <see langword="null"/>; or, with no expression body, an accessor's kind is unknown, or is
+	/// <see langword="null"/>; or <see cref="ExpressionBodyFactory"/> is set together with a
+	/// <see cref="TemplateBase.DefaultValue"/>; or, with no expression body, an accessor's kind is unknown, or is
 	/// <see cref="AccessorKind.Expression"/> with no <see cref="AccessorTemplate.BodyFactory"/>; or
 	/// the expression body, or an expression accessor's body, writes no expression. Nothing is
 	/// written in any of these cases.
@@ -87,6 +88,8 @@ public class PropertyTemplate : MemberTemplate
 	/// <inheritdoc/>
 	internal override void Validate()
 	{
+		base.Validate();
+
 		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
 		{
 			// Writing "Type Name;" here would emit a field, not a property — which is what an
@@ -96,6 +99,16 @@ public class PropertyTemplate : MemberTemplate
 			throw new InvalidOperationException(
 				$"Property '{Name}' declares no accessors and no expression body. Set Getter, " +
 				"Setter, or ExpressionBodyFactory.");
+		}
+
+		if (ExpressionBodyFactory is not null && HasDefaultValue)
+		{
+			// C# has no initialiser on an expression-bodied property, so writing either one would
+			// silently drop the other.
+			throw new InvalidOperationException(
+				$"Property '{Name}' has both an expression body and a default value. An " +
+				"expression-bodied property cannot have an initialiser; clear ExpressionBodyFactory " +
+				"or DefaultValue.");
 		}
 
 		if (ExpressionBodyFactory is null)

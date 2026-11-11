@@ -106,6 +106,7 @@ public class ClassTemplate : TemplateBase
 	/// <inheritdoc/>
 	internal override void Validate()
 	{
+		base.Validate();
 		_ = TypeKindKeywords.For(Kind);
 
 		// Null entries are refused here rather than found while writing: a null member or nested

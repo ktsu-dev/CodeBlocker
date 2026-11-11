@@ -84,6 +84,7 @@ public class OperatorTemplate : MemberTemplate
 	/// <inheritdoc/>
 	internal override void Validate()
 	{
+		base.Validate();
 		string signature = Signature;
 		TemplateRendering.EnsureNoNullEntries(Parameters, nameof(Parameters), $"Operator '{signature}'");
 	}
