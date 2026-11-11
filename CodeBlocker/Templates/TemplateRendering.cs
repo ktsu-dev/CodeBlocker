@@ -475,17 +475,44 @@ internal static class TemplateRendering
 	private static bool IsDirective(string line) => line.TrimStart().StartsWith('#');
 
 	/// <summary>
-	/// Reports whether any line of a fragment holds code: something other than a line comment or a
-	/// preprocessor directive.
+	/// Reports whether any line of a fragment holds code: something other than a comment, line or
+	/// block, or a preprocessor directive.
 	/// </summary>
 	/// <param name="lines">The lines of a fragment, as <see cref="SplitLines"/> returns them.</param>
 	/// <returns><see langword="true"/> if at least one line has code on it.</returns>
+	/// <remarks>
+	/// The lines are scanned together, so a block comment that spans several lines is not code on
+	/// any of them, and a <c>/*</c> or <c>//</c> inside a string literal is code, not a comment.
+	/// </remarks>
 	private static bool HasCode(string[] lines)
 	{
-		int[] codeEnds = FindCodeEnds(lines);
-		for (int i = 0; i < lines.Length; i++)
+		bool[] inComment = VerbatimStringScanner.FindCommentText(string.Join("\n", lines));
+		int lineStart = 0;
+		foreach (string line in lines)
 		{
-			if (IsCode(lines[i][..codeEnds[i]]))
+			if (!IsDirective(line) && HasCodeOutsideComments(line, inComment, lineStart))
+			{
+				return true;
+			}
+
+			lineStart += line.Length + 1;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Reports whether a line has anything other than whitespace outside its comments.
+	/// </summary>
+	/// <param name="line">The line to check.</param>
+	/// <param name="inComment">The comment flags for the whole fragment.</param>
+	/// <param name="lineStart">Where <paramref name="line"/> starts in the fragment.</param>
+	/// <returns><see langword="true"/> if the line has code on it.</returns>
+	private static bool HasCodeOutsideComments(string line, bool[] inComment, int lineStart)
+	{
+		for (int i = 0; i < line.Length; i++)
+		{
+			if (!inComment[lineStart + i] && !char.IsWhiteSpace(line[i]))
 			{
 				return true;
 			}
