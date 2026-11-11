@@ -1127,6 +1127,82 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void ABracedBodyDropsTheBlankLinesAroundIt()
+	{
+		ClassTemplate type = new() { Name = "C" };
+		type.Members.Add(new MethodTemplate
+		{
+			Type = "void",
+			Name = "A",
+			BodyFactory = codeBlocker =>
+			{
+				using (new Scope(codeBlocker))
+				{
+					codeBlocker.WriteLine("x();");
+				}
+
+				codeBlocker.NewLine();
+			},
+		});
+		type.Members.Add(new MethodTemplate
+		{
+			Type = "void",
+			Name = "B",
+			BodyFactory = codeBlocker =>
+			{
+				codeBlocker.NewLine();
+				codeBlocker.WriteLine("{");
+				codeBlocker.WriteLine("}");
+			},
+		});
+
+		// One blank line between the members, and each opening brace directly under its signature.
+		Assert.AreEqual(
+			"class C\n{\n\tvoid A()\n\t{\n\t\tx();\n\t}\n\n\tvoid B()\n\t{\n\t}\n}\n",
+			Render(type));
+	}
+
+	[TestMethod]
+	public void ABracedBodyKeepsItsInteriorBlankLinesWhenItsOuterOnesAreDropped() =>
+		Assert.AreEqual(
+			"void Run()\n{\n\tFirst();\n\n\tSecond();\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "Run",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.NewLine();
+					codeBlocker.NewLine();
+					using (new Scope(codeBlocker))
+					{
+						codeBlocker.WriteLine("First();");
+						codeBlocker.NewLine();
+						codeBlocker.WriteLine("Second();");
+					}
+
+					codeBlocker.NewLine();
+					codeBlocker.NewLine();
+				},
+			}));
+
+	[TestMethod]
+	public void ACommentOnlyBodyDropsTheBlankLinesAroundIt() =>
+		Assert.AreEqual(
+			"void Reset()\n{\n\t// nothing to reset\n}\n",
+			Render(new MethodTemplate
+			{
+				Type = "void",
+				Name = "Reset",
+				BodyFactory = codeBlocker =>
+				{
+					codeBlocker.NewLine();
+					codeBlocker.WriteLine("// nothing to reset");
+					codeBlocker.NewLine();
+				},
+			}));
+
+	[TestMethod]
 	public void AMultiLineBodyIsIndentedToWhereItIsSpliced()
 	{
 		MethodTemplate method = new()
