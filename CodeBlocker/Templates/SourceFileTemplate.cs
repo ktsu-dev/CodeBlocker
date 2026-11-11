@@ -63,7 +63,8 @@ public static class SourceFileTemplateExtensions
 
 		codeBlocker.AddDocumentation(template.Documentation);
 		codeBlocker.AddComments(template.Comments);
-		if (template.Attributes.Count > 0)
+		// A list of only blank attributes writes none, so it must not move the usings either.
+		if (TemplateRendering.NonBlank(template.Attributes).Count > 0)
 		{
 			codeBlocker.WriteUsings(template.Usings);
 			codeBlocker.AddAttributes(template.Attributes);

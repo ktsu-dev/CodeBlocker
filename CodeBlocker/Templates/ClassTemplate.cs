@@ -104,6 +104,7 @@ public class ClassTemplate : TemplateBase
 	/// <inheritdoc/>
 	internal override void Validate(CodeBlocker codeBlocker)
 	{
+		base.Validate(codeBlocker);
 		_ = TypeKindKeywords.For(Kind);
 
 		foreach (MemberTemplate member in Members)
@@ -129,13 +130,8 @@ public class ClassTemplate : TemplateBase
 
 	private void WriteBaseClassAndInterfacesTo(CodeBlocker codeBlocker)
 	{
-		List<string> baseAndInterfaces = [];
-		if (!string.IsNullOrEmpty(BaseClass))
-		{
-			baseAndInterfaces.Add(BaseClass);
-		}
-
-		baseAndInterfaces.AddRange(Interfaces);
+		// Blank entries are skipped, so an all-blank list writes no " : " at all.
+		List<string> baseAndInterfaces = TemplateRendering.NonBlank([BaseClass, .. Interfaces]);
 
 		if (baseAndInterfaces.Count == 0)
 		{
