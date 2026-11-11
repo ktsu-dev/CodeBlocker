@@ -57,6 +57,8 @@ public static class SourceFileTemplateExtensions
 		Ensure.NotNull(codeBlocker);
 		Ensure.NotNull(template);
 
+		using CodeBlocker.TemplateWriteScope scope = codeBlocker.BeginTemplateWrite();
+
 		// Checked before the header is written, so a type that would be refused leaves nothing
 		// behind rather than a file holding only the types before it.
 		ValidateAll(codeBlocker, template.Classes);
@@ -102,6 +104,7 @@ public static class SourceFileTemplateExtensions
 		Ensure.NotNull(classes);
 
 		List<ClassTemplate> classList = [.. classes];
+		using CodeBlocker.TemplateWriteScope scope = codeBlocker.BeginTemplateWrite();
 		ValidateAll(codeBlocker, classList);
 
 		foreach (ClassTemplate classTemplate in classList)
@@ -118,7 +121,10 @@ public static class SourceFileTemplateExtensions
 		foreach (ClassTemplate classTemplate in classes)
 		{
 			Ensure.NotNull(classTemplate);
-			classTemplate.Validate(codeBlocker);
+			if (!codeBlocker.IsChecked(classTemplate))
+			{
+				classTemplate.Validate(codeBlocker);
+			}
 		}
 	}
 }

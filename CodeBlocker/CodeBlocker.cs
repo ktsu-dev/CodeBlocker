@@ -41,7 +41,78 @@ public class CodeBlocker : IDisposable
 	/// </remarks>
 	private bool isMidLine;
 
+	/// <summary>
+	/// The types already checked by the template write under way, or <see langword="null"/> when
+	/// none is under way.
+	/// </summary>
+	/// <remarks>
+	/// A type is checked, members and nested types included, before anything of it is written. The
+	/// entry points that write several types check all of them first, and each nested type is
+	/// written through the same path. Without this, a subtree would be checked again at every level,
+	/// running an expression body's callback once per level (ktsu-dev/CodeBlocker#202). Types are
+	/// matched by reference, so a different type that a callback writes is still checked.
+	/// </remarks>
+	private HashSet<object>? checkedTemplates;
+
+	private int templateWriteDepth;
+
 	private IndentedTextWriter IndentedTextWriter { get; }
+
+	/// <summary>
+	/// Starts a template write, inside which a type checked once is not checked again. Dispose the
+	/// result when the write ends, whether or not it succeeds.
+	/// </summary>
+	/// <returns>The scope to dispose when the write ends.</returns>
+	internal TemplateWriteScope BeginTemplateWrite()
+	{
+		checkedTemplates ??= new HashSet<object>(ReferenceComparer.Instance);
+		templateWriteDepth++;
+		return new TemplateWriteScope(this);
+	}
+
+	/// <summary>
+	/// Records that <paramref name="template"/> has been checked in the template write under way.
+	/// Does nothing outside one.
+	/// </summary>
+	/// <param name="template">The checked template.</param>
+	internal void MarkChecked(object template) => checkedTemplates?.Add(template);
+
+	/// <summary>
+	/// Gets whether <paramref name="template"/> has already been checked in the template write
+	/// under way.
+	/// </summary>
+	/// <param name="template">The template.</param>
+	/// <returns><see langword="true"/> when it has been checked and need not be again.</returns>
+	internal bool IsChecked(object template) => checkedTemplates?.Contains(template) == true;
+
+	private void EndTemplateWrite()
+	{
+		if (--templateWriteDepth == 0)
+		{
+			checkedTemplates = null;
+		}
+	}
+
+	/// <summary>
+	/// Compares by reference, so a template type that overrides <see cref="object.Equals(object)"/>
+	/// is still told apart from an equal copy. (<c>ReferenceEqualityComparer</c> is not available on
+	/// .NET Standard.)
+	/// </summary>
+	private sealed class ReferenceComparer : IEqualityComparer<object>
+	{
+		internal static ReferenceComparer Instance { get; } = new();
+
+		public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+
+		public int GetHashCode(object obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+	}
+
+	/// <summary>Ends a template write started by <see cref="BeginTemplateWrite"/>.</summary>
+	internal readonly struct TemplateWriteScope(CodeBlocker owner) : IDisposable
+	{
+		/// <inheritdoc/>
+		public void Dispose() => owner.EndTemplateWrite();
+	}
 
 	/// <summary>
 	/// Get the current indent string being used.
