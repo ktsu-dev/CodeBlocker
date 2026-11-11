@@ -87,14 +87,10 @@ internal static class VerbatimStringScanner
 	{
 		int braceDepth = 0;
 		int bracketDepth = 0;
+		bool atLineStart = !isInterpolationHole;
 		while (position < text.Length)
 		{
-			if (lineCommentStarts is not null && text[position] == '/' && At(text, position + 1) == '/')
-			{
-				lineCommentStarts.Add(position);
-			}
-
-			if (TrySkipCommentOrLiteral(text, ref position, inVerbatimText, inCommentText))
+			if (TrySkipNonCode(text, ref position, inVerbatimText, lineCommentStarts, inCommentText, ref atLineStart, isInterpolationHole))
 			{
 				continue;
 			}
@@ -116,6 +112,73 @@ internal static class VerbatimStringScanner
 
 			position++;
 		}
+	}
+
+	/// <summary>
+	/// Moves past the preprocessor line, comment or literal that starts at
+	/// <paramref name="position"/>, if one does, recording a line comment's start on the way.
+	/// </summary>
+	/// <returns>True when something was skipped.</returns>
+	private static bool TrySkipNonCode(string text, ref int position, bool[] inVerbatimText, List<int>? lineCommentStarts, bool[]? inCommentText, ref bool atLineStart, bool isInterpolationHole)
+	{
+		if (TrySkipPreprocessorLine(text, ref position, ref atLineStart, isInterpolationHole))
+		{
+			return true;
+		}
+
+		if (lineCommentStarts is not null && text[position] == '/' && At(text, position + 1) == '/')
+		{
+			lineCommentStarts.Add(position);
+		}
+
+		if (!TrySkipCommentOrLiteral(text, ref position, inVerbatimText, inCommentText))
+		{
+			return false;
+		}
+
+		// A literal can span lines, but the code after it does not start a line.
+		atLineStart = false;
+		return true;
+	}
+
+	/// <summary>
+	/// Moves past the rest of a preprocessor line when <paramref name="position"/> is at its
+	/// <c>#</c>, and otherwise tracks whether the walk is still at the start of a line.
+	/// </summary>
+	/// <remarks>
+	/// The compiler does not tokenize the rest of a preprocessor line: the text after
+	/// <c>#region</c>, <c>#error</c> or <c>#warning</c> is free text, so an <c>@"</c> in it opens
+	/// nothing (ktsu-dev/CodeBlocker#194). The line break is left to the code around it. Only a
+	/// <c>#</c> preceded on its line by nothing but whitespace starts a directive, and never inside
+	/// an interpolation hole.
+	/// </remarks>
+	/// <param name="text">The C# fragment to scan.</param>
+	/// <param name="position">The current position, moved to the line break when a directive is skipped.</param>
+	/// <param name="atLineStart">Whether only whitespace has been seen since the last line break.</param>
+	/// <param name="isInterpolationHole">Whether the walk is inside an interpolation hole.</param>
+	/// <returns>True when a directive line was skipped.</returns>
+	private static bool TrySkipPreprocessorLine(string text, ref int position, ref bool atLineStart, bool isInterpolationHole)
+	{
+		char c = text[position];
+		if (IsLineBreak(c))
+		{
+			atLineStart = !isInterpolationHole;
+			return false;
+		}
+
+		if (!atLineStart)
+		{
+			return false;
+		}
+
+		if (c == '#')
+		{
+			SkipLineComment(text, ref position);
+			return true;
+		}
+
+		atLineStart = char.IsWhiteSpace(c);
+		return false;
 	}
 
 	/// <summary>

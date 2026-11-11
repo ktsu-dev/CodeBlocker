@@ -49,6 +49,18 @@ public sealed class WriteLinesTests
 	}
 
 	[TestMethod]
+	public void IndentsEveryLineAfterAVerbatimPrefixInADirective()
+	{
+		// ktsu-dev/CodeBlocker#194: the @" in the #region name opened a verbatim string that never
+		// closed, so the three lines after it were written at column 0.
+		using CodeBlocker codeBlocker = CodeBlocker.Create();
+		codeBlocker.Indent();
+		codeBlocker.WriteLines("#region Handles @\" prefixes\nint a;\nint b;\n#endregion\n");
+
+		Assert.AreEqual($"\t#region Handles @\" prefixes{Nl}\tint a;{Nl}\tint b;{Nl}\t#endregion{Nl}", codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void KeepsBlankLinesFreeOfIndentation()
 	{
 		using CodeBlocker codeBlocker = CodeBlocker.Create();

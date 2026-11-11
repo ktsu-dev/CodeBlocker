@@ -22,6 +22,41 @@ public sealed class TemplateTests
 
 	private static string Render(TemplateBase template) => Render(template.WriteTo);
 
+	[TestMethod]
+	public void RegionNameWithAVerbatimPrefixKeepsTheMemberIndented()
+	{
+		// ktsu-dev/CodeBlocker#194.
+		ClassTemplate template = new()
+		{
+			Name = "C",
+			Members =
+			{
+				new MethodTemplate
+				{
+					Type = "void",
+					Name = "M",
+					BodyFactory = b =>
+					{
+						b.WriteLine("{");
+						b.Indent();
+						using (new RegionScope(b, "Paths like @\"C:\\"))
+						{
+							b.WriteLine("int a = 1;");
+							b.WriteLine("int b = 2;");
+						}
+
+						b.Outdent();
+						b.WriteLine("}");
+					},
+				},
+			},
+		};
+
+		Assert.AreEqual(
+			"class C\n{\n\tvoid M()\n\t{\n\t\t#region Paths like @\"C:\\\n\t\tint a = 1;\n\t\tint b = 2;\n\t\t#endregion\n\t}\n}\n",
+			Render(template));
+	}
+
 	#region Blank entries
 
 	[TestMethod]
