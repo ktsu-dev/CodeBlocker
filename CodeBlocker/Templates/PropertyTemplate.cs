@@ -87,6 +87,8 @@ public class PropertyTemplate : MemberTemplate
 	/// <inheritdoc/>
 	internal override void Validate()
 	{
+		base.Validate();
+
 		if (ExpressionBodyFactory is null && Getter is null && Setter is null)
 		{
 			// Writing "Type Name;" here would emit a field, not a property — which is what an

@@ -104,6 +104,7 @@ public class ClassTemplate : TemplateBase
 	/// <inheritdoc/>
 	internal override void Validate()
 	{
+		base.Validate();
 		_ = TypeKindKeywords.For(Kind);
 
 		foreach (MemberTemplate member in Members)
