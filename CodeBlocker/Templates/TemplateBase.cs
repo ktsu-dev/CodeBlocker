@@ -24,6 +24,7 @@ public abstract class TemplateBase
 	/// <summary>
 	/// Gets or sets the initialiser or default value. Empty means no initialiser is written, unless
 	/// <see cref="DefaultValueIsQuoted"/> is set, in which case it is the empty string <c>""</c>.
+	/// A <see langword="null"/> value is read as empty.
 	/// </summary>
 	public string DefaultValue { get; set; } = string.Empty;
 
@@ -115,7 +116,7 @@ public abstract class TemplateBase
 		}
 
 		codeBlocker.Write(" = ");
-		codeBlocker.Write(DefaultValueIsQuoted ? TemplateRendering.QuoteStringLiteral(DefaultValue) : DefaultValue);
+		codeBlocker.Write(DefaultValueIsQuoted ? TemplateRendering.QuoteStringLiteral(DefaultValue ?? string.Empty) : DefaultValue);
 	}
 }
 

@@ -190,6 +190,34 @@ public sealed class TemplateTests
 			Render(new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = "", DefaultValueIsQuoted = true }));
 
 	[TestMethod]
+	public void ParameterWritesAQuotedNullDefaultValueAsEmpty() =>
+		// ktsu-dev/CodeBlocker#209: a null quoted default threw NullReferenceException mid-declaration.
+		Assert.AreEqual(
+			"string separator = \"\"",
+			Render(new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = null!, DefaultValueIsQuoted = true }));
+
+	[TestMethod]
+	public void AQuotedNullDefaultKeepsAMethodWhole()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members =
+			{
+				new MethodTemplate
+				{
+					Type = "void",
+					Name = "M",
+					BodyFactory = _ => { },
+					Parameters = { new ParameterTemplate { Type = "string", Name = "s", DefaultValue = null!, DefaultValueIsQuoted = true } },
+				},
+			},
+		};
+
+		StringAssert.Contains(Render(type), "void M(string s = \"\") { }");
+	}
+
+	[TestMethod]
 	public void ParameterWithAnEmptyUnquotedDefaultValueHasNone() =>
 		Assert.AreEqual("string separator", Render(new ParameterTemplate { Type = "string", Name = "separator", DefaultValue = "" }));
 
@@ -245,6 +273,13 @@ public sealed class TemplateTests
 		Assert.AreEqual(
 			"public const string Empty = \"\";\n",
 			Render(new FieldTemplate { Type = "string", Name = "Empty", Keywords = { "public", "const" }, DefaultValue = "", DefaultValueIsQuoted = true }));
+
+	[TestMethod]
+	public void FieldWritesAQuotedNullInitialiserAsEmpty() =>
+		// ktsu-dev/CodeBlocker#209.
+		Assert.AreEqual(
+			"private string label = \"\";\n",
+			Render(new FieldTemplate { Type = "string", Name = "label", Keywords = { "private" }, DefaultValue = null!, DefaultValueIsQuoted = true }));
 
 	[TestMethod]
 	public void FieldCommentsAndAttributesGoOnTheirOwnLines()
@@ -345,6 +380,24 @@ public sealed class TemplateTests
 			Getter = AccessorTemplate.Auto(),
 			Setter = AccessorTemplate.Auto(),
 			DefaultValue = "",
+			DefaultValueIsQuoted = true,
+		};
+
+		Assert.AreEqual("public string Prefix { get; set; } = \"\";\n", Render(property));
+	}
+
+	[TestMethod]
+	public void APropertyWritesAQuotedNullInitialiserAsEmpty()
+	{
+		// ktsu-dev/CodeBlocker#209.
+		PropertyTemplate property = new()
+		{
+			Type = "string",
+			Name = "Prefix",
+			Keywords = { "public" },
+			Getter = AccessorTemplate.Auto(),
+			Setter = AccessorTemplate.Auto(),
+			DefaultValue = null!,
 			DefaultValueIsQuoted = true,
 		};
 
