@@ -73,7 +73,7 @@ public static class CodeBlockerExtensions
 
 	/// <summary>
 	/// Writes a file-scoped namespace declaration followed by a blank line, or nothing at all when
-	/// no namespace is given.
+	/// no namespace is given or it is only whitespace.
 	/// </summary>
 	/// <param name="codeBlocker">The <see cref="CodeBlocker"/> to write to.</param>
 	/// <param name="namespaceName">The namespace, for example <c>Contoso.Widgets</c>.</param>
@@ -83,7 +83,7 @@ public static class CodeBlockerExtensions
 	{
 		Ensure.NotNull(codeBlocker);
 
-		if (string.IsNullOrEmpty(namespaceName))
+		if (string.IsNullOrWhiteSpace(namespaceName))
 		{
 			return codeBlocker;
 		}

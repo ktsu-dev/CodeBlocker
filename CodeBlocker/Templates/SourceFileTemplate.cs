@@ -16,7 +16,7 @@ public class SourceFileTemplate : TemplateBase
 	/// </summary>
 	public string FileName { get; set; } = string.Empty;
 
-	/// <summary>Gets or sets the namespace. Empty writes no namespace declaration.</summary>
+	/// <summary>Gets or sets the namespace. Empty or whitespace writes no namespace declaration.</summary>
 	public string Namespace { get; set; } = string.Empty;
 
 	/// <summary>

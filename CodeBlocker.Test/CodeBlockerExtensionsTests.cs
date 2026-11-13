@@ -128,6 +128,19 @@ public sealed class CodeBlockerExtensionsTests
 	}
 
 	[TestMethod]
+	public void AWhitespaceNamespaceWritesNothing()
+	{
+		using CodeBlocker spaces = Create();
+		using CodeBlocker tab = Create();
+
+		spaces.WriteFileScopedNamespace("  ");
+		tab.WriteFileScopedNamespace("\t");
+
+		Assert.AreEqual(string.Empty, spaces.ToString());
+		Assert.AreEqual(string.Empty, tab.ToString());
+	}
+
+	[TestMethod]
 	public void UsingsAreWrittenOnePerLineAndFollowedByABlankLine()
 	{
 		using CodeBlocker codeBlocker = Create();

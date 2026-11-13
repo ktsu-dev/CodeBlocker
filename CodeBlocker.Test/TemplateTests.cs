@@ -2080,6 +2080,20 @@ public sealed class TemplateTests
 	}
 
 	[TestMethod]
+	public void ASourceFileWithAWhitespaceNamespaceWritesNoNamespace()
+	{
+		SourceFileTemplate file = new()
+		{
+			Namespace = " ",
+			Usings = { " ", "System" },
+		};
+
+		Assert.AreEqual(
+			"using System;\n\n",
+			Render(codeBlocker => codeBlocker.AddSourceFile(file)));
+	}
+
+	[TestMethod]
 	public void ASourceFileWithAnInvalidClassWritesNothing()
 	{
 		SourceFileTemplate file = new()
