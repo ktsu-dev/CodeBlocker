@@ -72,10 +72,18 @@ public class ClassTemplate : TemplateBase
 	{
 		Ensure.NotNull(codeBlocker);
 
+		using CodeBlocker.TemplateWriteScope scope = codeBlocker.BeginTemplateWrite();
+
 		// Everything is checked before the doc comment, attributes and modifiers are written, so a
 		// failing check cannot leave an unfinished declaration behind, nor a closed body that is
-		// silently missing the failing member and everything after it.
-		Validate(codeBlocker);
+		// silently missing the failing member and everything after it. A type already checked by an
+		// enclosing type or by AddClasses/AddSourceFile is not checked again, so an expression body's
+		// callback runs once to check it and once to write it, however deeply its type is nested.
+		if (!codeBlocker.IsChecked(this))
+		{
+			Validate(codeBlocker);
+		}
+
 		string keyword = TypeKindKeywords.For(Kind);
 		base.WriteTo(codeBlocker);
 
@@ -122,10 +130,12 @@ public class ClassTemplate : TemplateBase
 			member.Validate(codeBlocker);
 		}
 
-		foreach (ClassTemplate nestedClass in NestedClasses)
+		foreach (ClassTemplate nestedClass in NestedClasses.Where(nested => !codeBlocker.IsChecked(nested)))
 		{
 			nestedClass.Validate(codeBlocker);
 		}
+
+		codeBlocker.MarkChecked(this);
 	}
 
 	/// <summary>

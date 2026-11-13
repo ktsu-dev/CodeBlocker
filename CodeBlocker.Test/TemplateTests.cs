@@ -2234,6 +2234,86 @@ public sealed class TemplateTests
 
 	#region Verbatim string literals in bodies
 
+	[TestMethod]
+	public void ANestedPropertysExpressionBodyRunsOnceToCheckAndOnceToWrite()
+	{
+		// ktsu-dev/CodeBlocker#202: every nesting level and AddClasses validated the subtree again.
+		int calls = 0;
+		PropertyTemplate property = new()
+		{
+			Type = "int",
+			Name = "Id",
+			Keywords = { "public" },
+			ExpressionBodyFactory = codeBlocker =>
+			{
+				calls++;
+				codeBlocker.Write("1");
+			},
+		};
+		ClassTemplate inner = new() { Name = "Inner", Members = { property } };
+		ClassTemplate mid = new() { Name = "Mid", NestedClasses = { inner } };
+		ClassTemplate outer = new() { Name = "Outer", NestedClasses = { mid } };
+		SourceFileTemplate file = new() { Classes = { outer } };
+
+		_ = Render(codeBlocker => codeBlocker.AddSourceFile(file));
+		Assert.AreEqual(2, calls, "AddSourceFile");
+
+		calls = 0;
+		_ = Render(outer);
+		Assert.AreEqual(2, calls, "ClassTemplate.WriteTo");
+
+		calls = 0;
+		_ = Render(codeBlocker => codeBlocker.AddClasses([outer]));
+		Assert.AreEqual(2, calls, "AddClasses");
+	}
+
+	[TestMethod]
+	public void AStatefulExpressionBodyWritesTheSameCodeWhereverItsClassIsNested()
+	{
+		int nextId = 0;
+		PropertyTemplate IdProperty(string name) => new()
+		{
+			Type = "int",
+			Name = name,
+			Keywords = { "public" },
+			ExpressionBodyFactory = codeBlocker => codeBlocker.Write($"{nextId++}"),
+		};
+
+		ClassTemplate standalone = new() { Name = "Ids", Members = { IdProperty("First"), IdProperty("Second") } };
+		string alone = Render(standalone);
+
+		nextId = 0;
+		ClassTemplate nested = new() { Name = "Ids", Members = { IdProperty("First"), IdProperty("Second") } };
+		SourceFileTemplate file = new() { Classes = { new ClassTemplate { Name = "Outer", NestedClasses = { nested } } } };
+		string inFile = Render(codeBlocker => codeBlocker.AddSourceFile(file));
+
+		Assert.Contains("public int First => 2;", alone);
+		Assert.Contains("public int First => 2;", inFile);
+		Assert.Contains("public int Second => 3;", inFile);
+	}
+
+	[TestMethod]
+	public void AClassWrittenFromInsideABodyFactoryIsStillChecked()
+	{
+		// Skipping a repeated check must not skip checking a different type a callback writes.
+		ClassTemplate invalid = new() { Name = "Bad", Members = { InvalidProperty() } };
+		ClassTemplate outer = new()
+		{
+			Name = "Outer",
+			Members =
+			{
+				new MethodTemplate
+				{
+					Name = "M",
+					Type = "void",
+					BodyFactory = codeBlocker => codeBlocker.AddClass(invalid),
+				},
+			},
+		};
+
+		_ = Assert.ThrowsExactly<InvalidOperationException>(() => Render(outer));
+	}
+
 	private static string RenderInClass(MemberTemplate member)
 	{
 		ClassTemplate type = new() { Name = "C", Members = { member } };

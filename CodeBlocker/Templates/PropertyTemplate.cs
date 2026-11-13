@@ -90,7 +90,8 @@ public class PropertyTemplate : MemberTemplate
 	/// The expression body, or an expression accessor's body, is rendered to check that it writes an
 	/// expression, so a class holding this property refuses it before writing its own header rather
 	/// than after the members ahead of it. That runs the callback once more when the property is
-	/// then written.
+	/// then written, and no more than that: a type is checked once per write, however deeply it is
+	/// nested.
 	/// </remarks>
 	internal override void Validate(CodeBlocker codeBlocker)
 	{
