@@ -48,7 +48,7 @@ public class DocComment
 
 	/// <summary>
 	/// Gets or sets the <c>cref</c> of the member to inherit documentation from. Ignored unless
-	/// <see cref="InheritDoc"/> is set; empty writes a bare <c>&lt;inheritdoc/&gt;</c>.
+	/// <see cref="InheritDoc"/> is set; empty or white space writes a bare <c>&lt;inheritdoc/&gt;</c>.
 	/// </summary>
 	public string InheritDocCref { get; set; } = string.Empty;
 
@@ -70,10 +70,17 @@ public class DocComment
 	/// <summary>Gets the <c>&lt;param&gt;</c> entries, keyed by parameter name.</summary>
 	public Collection<DocTag> Params { get; } = [];
 
-	/// <summary>Gets the <c>&lt;exception&gt;</c> entries, keyed by exception type <c>cref</c>.</summary>
+	/// <summary>
+	/// Gets the <c>&lt;exception&gt;</c> entries, keyed by exception type <c>cref</c>. An entry whose
+	/// <see cref="DocTag.Name"/> is <see langword="null"/>, empty or white space is skipped: it would
+	/// be written as <c>cref=""</c>, which the compiler reports as CS1584.
+	/// </summary>
 	public Collection<DocTag> Exceptions { get; } = [];
 
-	/// <summary>Gets the <c>&lt;seealso&gt;</c> <c>cref</c> values.</summary>
+	/// <summary>
+	/// Gets the <c>&lt;seealso&gt;</c> <c>cref</c> values. A <see langword="null"/>, empty or white
+	/// space entry is skipped.
+	/// </summary>
 	public Collection<string> SeeAlso { get; } = [];
 
 	/// <summary>
@@ -87,8 +94,15 @@ public class DocComment
 		&& string.IsNullOrEmpty(Value)
 		&& TypeParams.Count == 0
 		&& Params.Count == 0
-		&& Exceptions.Count == 0
-		&& SeeAlso.Count == 0;
+		&& !WrittenExceptions.Any()
+		&& !WrittenSeeAlso.Any();
+
+	/// <summary>Gets the <see cref="Exceptions"/> entries that are written: those with a cref.</summary>
+	private IEnumerable<DocTag> WrittenExceptions =>
+		Exceptions.Where(exception => exception is not null && !string.IsNullOrWhiteSpace(exception.Name));
+
+	/// <summary>Gets the <see cref="SeeAlso"/> entries that are written: those that are not blank.</summary>
+	private IEnumerable<string> WrittenSeeAlso => TemplateRendering.NonBlank(SeeAlso);
 
 	/// <summary>
 	/// Writes the documentation in the canonical tag order: <c>inheritdoc</c>, <c>summary</c>,
@@ -100,7 +114,9 @@ public class DocComment
 	/// <exception cref="ArgumentException">
 	/// <see cref="InheritDocCref"/>, a <see cref="SeeAlso"/> entry, or the <see cref="DocTag.Name"/> of
 	/// a <see cref="TypeParams"/>, <see cref="Params"/> or <see cref="Exceptions"/> entry contains a
-	/// line break. Nothing is written.
+	/// line break; or <see cref="TypeParams"/>, <see cref="Params"/> or <see cref="Exceptions"/> holds
+	/// a <see langword="null"/> entry, or a <see cref="TypeParams"/> or <see cref="Params"/> entry has a
+	/// <see langword="null"/> <see cref="DocTag.Name"/>. Nothing is written.
 	/// </exception>
 	public void WriteTo(CodeBlocker codeBlocker)
 	{
@@ -112,7 +128,7 @@ public class DocComment
 
 		if (InheritDoc)
 		{
-			codeBlocker.WriteLine(string.IsNullOrEmpty(InheritDocCref)
+			codeBlocker.WriteLine(string.IsNullOrWhiteSpace(InheritDocCref)
 				? "/// <inheritdoc/>"
 				: $"/// <inheritdoc cref=\"{EscapeAttribute(InheritDocCref)}\"/>");
 		}
@@ -132,14 +148,14 @@ public class DocComment
 		WriteElement(codeBlocker, "returns", null, Returns);
 		WriteElement(codeBlocker, "value", null, Value);
 
-		foreach (DocTag exception in Exceptions)
+		foreach (DocTag exception in WrittenExceptions)
 		{
 			WriteNamedElement(codeBlocker, "exception", $" cref=\"{EscapeAttribute(exception.Name)}\"", exception.Text);
 		}
 
 		WriteElement(codeBlocker, "remarks", null, Remarks);
 
-		foreach (string cref in SeeAlso)
+		foreach (string cref in WrittenSeeAlso)
 		{
 			codeBlocker.WriteLine($"/// <seealso cref=\"{EscapeAttribute(cref)}\"/>");
 		}
@@ -197,7 +213,9 @@ public class DocComment
 	/// so a container refuses a bad doc comment before writing any of itself, not partway through.
 	/// </remarks>
 	/// <exception cref="ArgumentException">
-	/// <see cref="InheritDocCref"/>, a <see cref="SeeAlso"/> entry, or a tag name contains a line break.
+	/// <see cref="InheritDocCref"/>, a <see cref="SeeAlso"/> entry, or a tag name contains a line break;
+	/// a tag collection holds a <see langword="null"/> entry; or a <c>param</c> or <c>typeparam</c>
+	/// entry has a <see langword="null"/> name.
 	/// </exception>
 	internal void ValidateAttributes()
 	{
@@ -206,19 +224,33 @@ public class DocComment
 			EnsureSingleLine(InheritDocCref, "inheritdoc cref", nameof(InheritDocCref));
 		}
 
-		EnsureNamesSingleLine(TypeParams, "typeparam name", nameof(TypeParams));
-		EnsureNamesSingleLine(Params, "param name", nameof(Params));
-		EnsureNamesSingleLine(Exceptions, "exception cref", nameof(Exceptions));
+		// Null entries are refused here rather than found while writing, where they would throw a
+		// bare NullReferenceException with the doc comment, and its container, partly written. A
+		// blank exception cref is skipped when writing instead, like a blank seealso entry; a param
+		// or typeparam must name something, so a null name is refused.
+		EnsureNames(TypeParams, "typeparam name", nameof(TypeParams), nameRequired: true);
+		EnsureNames(Params, "param name", nameof(Params), nameRequired: true);
+		EnsureNames(Exceptions, "exception cref", nameof(Exceptions), nameRequired: false);
 
 		foreach (string cref in SeeAlso)
 		{
 			EnsureSingleLine(cref, "seealso cref", nameof(SeeAlso));
 		}
 
-		static void EnsureNamesSingleLine(Collection<DocTag> tags, string what, string paramName)
+		static void EnsureNames(Collection<DocTag> tags, string what, string paramName, bool nameRequired)
 		{
 			foreach (DocTag tag in tags)
 			{
+				if (tag is null)
+				{
+					throw new ArgumentException($"A doc comment has a null entry in {paramName}.", paramName);
+				}
+
+				if (nameRequired && tag.Name is null)
+				{
+					throw new ArgumentException($"A doc comment {what} must not be null.", paramName);
+				}
+
 				EnsureSingleLine(tag.Name, what, paramName);
 			}
 		}

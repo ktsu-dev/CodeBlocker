@@ -370,6 +370,117 @@ public sealed class DocCommentTests
 	}
 
 	[TestMethod]
+	public void BlankCrefsAreNotWritten()
+	{
+		// ktsu-dev/CodeBlocker#208: each of these was written as cref="" or cref="  " (CS1584).
+		DocComment documentation = new() { InheritDoc = true, InheritDocCref = "  " };
+		documentation.SeeAlso.Add("");
+		documentation.SeeAlso.Add("  ");
+		documentation.SeeAlso.Add(null!);
+		documentation.SeeAlso.Add("Other");
+		documentation.Exceptions.Add(new DocTag { Name = "", Text = "x" });
+		documentation.Exceptions.Add(new DocTag { Name = " \t", Text = "x" });
+		documentation.Exceptions.Add(new DocTag { Name = null!, Text = "x" });
+		documentation.Exceptions.Add(new DocTag { Name = "InvalidOperationException", Text = "y" });
+
+		Assert.AreEqual(
+			"""
+			/// <inheritdoc/>
+			/// <exception cref="InvalidOperationException">y</exception>
+			/// <seealso cref="Other"/>
+
+			""".ReplaceLineEndings("\n"),
+			Render(documentation));
+	}
+
+	[TestMethod]
+	public void ACommentOfOnlyBlankCrefsIsEmpty()
+	{
+		DocComment documentation = new() { SeeAlso = { "", " " }, Exceptions = { new DocTag { Name = " ", Text = "x" } } };
+
+		Assert.IsTrue(documentation.IsEmpty);
+		Assert.AreEqual(string.Empty, Render(documentation));
+	}
+
+	[TestMethod]
+	public void ANullSeeAlsoEntryKeepsTheClassWhole()
+	{
+		// ktsu-dev/CodeBlocker#208: a null entry threw NullReferenceException and left the class
+		// without its member.
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members =
+			{
+				new MethodTemplate
+				{
+					Type = "void",
+					Name = "M",
+					BodyFactory = _ => { },
+					Documentation = new DocComment { Summary = "hi", SeeAlso = { null! } },
+				},
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		codeBlocker.AddClass(type);
+
+		Assert.AreEqual(
+			"""
+			class C
+			{
+				/// <summary>hi</summary>
+				void M() { }
+			}
+
+			""".ReplaceLineEndings("\n"),
+			codeBlocker.ToString());
+	}
+
+	[TestMethod]
+	public void ANullTagOrTagNameIsRejectedBeforeWriting()
+	{
+		DocComment[] comments =
+		[
+			new() { Summary = "s", Params = { null! } },
+			new() { Summary = "s", TypeParams = { null! } },
+			new() { Summary = "s", Exceptions = { null! } },
+			new() { Summary = "s", Params = { new DocTag { Name = null!, Text = "t" } } },
+			new() { Summary = "s", TypeParams = { new DocTag { Name = null!, Text = "t" } } },
+		];
+
+		foreach (DocComment documentation in comments)
+		{
+			using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+			Assert.ThrowsExactly<ArgumentException>(() => documentation.WriteTo(codeBlocker));
+			Assert.AreEqual(string.Empty, codeBlocker.ToString(), "Nothing should be written before the check.");
+		}
+	}
+
+	[TestMethod]
+	public void ANullTagIsRejectedBeforeTheClassIsWritten()
+	{
+		ClassTemplate type = new()
+		{
+			Name = "C",
+			Members =
+			{
+				new MethodTemplate
+				{
+					Type = "void",
+					Name = "M",
+					BodyFactory = _ => { },
+					Documentation = new DocComment { Summary = "hi", Params = { null! } },
+				},
+			},
+		};
+
+		using CodeBlocker codeBlocker = CodeBlocker.Create(CodeBlocker.DefaultIndentString, NewLines.Lf);
+		Assert.ThrowsExactly<ArgumentException>(() => codeBlocker.AddClass(type));
+		Assert.AreEqual(string.Empty, codeBlocker.ToString());
+	}
+
+	[TestMethod]
 	public void AnUnusedInheritDocCrefIsNotChecked() =>
 		Assert.AreEqual(
 			"/// <summary>s</summary>\n",
